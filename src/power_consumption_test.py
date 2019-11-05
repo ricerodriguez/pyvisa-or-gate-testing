@@ -19,15 +19,15 @@ import argparse
 
 class PowerConsumptionTest:
     def __init__(self):
-        self.rm = pyvisa.ResourceManager()
+        rm = pyvisa.ResourceManager()
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
         self.smu = None
-        self.__config_instr()
+        self.__config_instr(rm)
 
-    def __config_instr(self):
+    def __config_instr(self,rm):
         # First get the SMU from the list of resources
         try:
-            self.smu = self.rm.list_resources()[0]
+            self.smu = rm.open_resource(rm.list_resources()[0])
             self.smu.read_termination = '\n'
             self.smu.write_termination = '\n'
             logging.debug('Set SMU as {}'.format(self.smu))
