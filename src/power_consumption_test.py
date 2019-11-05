@@ -21,7 +21,7 @@ class PowerConsumptionTest:
     def __init__(self):
         rm = pyvisa.ResourceManager()
         self.list_resources = rm.list_resources()
-        logging.info('All resources:\n',str(self.list_resources)
+        logging.info('All resources:\n',str(self.list_resources))
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
         self.smu = None
         self.__config_instr(rm)
