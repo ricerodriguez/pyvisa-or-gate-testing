@@ -15,19 +15,42 @@ __status__ = "Prototype"
 
 import pyvisa
 import logging
+import argparse
 
 class PowerConsumptionTest:
     def __init__(self):
         self.rm = pyvisa.ResourceManager()
+        self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
         self.smu = None
         self.__config_instr()
 
     def __config_instr(self):
         # First get the SMU from the list of resources
         try:
-            self.smu = rm.list_resources()[0]
-            logging.debug("Set SMU as {}".format(self.smu))
+            self.smu = self.rm.list_resources()[0]
+            self.smu.read_termination = '\n'
+            self.smu.write_termination = '\n'
+            logging.debug('Set SMU as {}'.format(self.smu))
+            self.smu.write('*IDN?')
+            # If it times out, it is broken. I don't know what it times out with.
+            logging.info('Queried SMU for IDN and received the following message back:\n',
+                         self.smu.read_bytes(1))
         except IndexError as err:
-            logging.error("No instruments are connected to the computer. Please try again.")
+            logging.error('No instruments are connected to the computer. Please try again.')
             exit()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Power Consumption Test finds the worst-case power consumption'
+                                     'for both static and dynamic operational conditions.')
+    parser.add_argument('--verbose','-v',action='store_true',help='output verbosely')
+    args = parser.parse_args()
+
+    # Verbose option sets logging level to debug instead of warning
+    if (args.verbose):
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.WARNING)
+
+    pct = PowerConsumptionTest()
+    
             
