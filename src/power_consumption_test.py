@@ -20,6 +20,7 @@ import argparse
 class PowerConsumptionTest:
     def __init__(self):
         rm = pyvisa.ResourceManager()
+        self.list_resources = rm.list_resources()
         logging.info('All resources:\n',str(rm.list_resources()))
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
         self.smu = None
@@ -28,14 +29,15 @@ class PowerConsumptionTest:
     def __config_instr(self,rm):
         # First get the SMU from the list of resources
         try:
-            self.smu = rm.open_resource(rm.list_resources()[-1])
+            self.smu = rm.open_resource(self.list_resources()[-1])
             self.smu.read_termination = '\n'
             self.smu.write_termination = '\n'
             logging.debug('Set SMU as {}'.format(self.smu))
             self.smu.write('*IDN?')
+            bytes_back = self.smu_read_bytes(1)
             # If it times out, it is broken. I don't know what it times out with.
             logging.info('Queried SMU for IDN and received the following message back:\n',
-                         self.smu.read_bytes(1))
+                         bytes_back)
         except IndexError as err:
             logging.error('No instruments are connected to the computer. Please try again.')
             exit()
