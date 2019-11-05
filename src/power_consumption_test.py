@@ -39,7 +39,12 @@ class PowerConsumptionTest:
             logging.info('Queried SMU for IDN and received the following message back:\n',
                          bytes_back)
         except IndexError as err:
+            logging.error(err)
             logging.error('No instruments are connected to the computer. Please try again.')
+            exit()
+
+        except pyvisa.errors.VisaIOError as err:
+            logging.error(err)
             exit()
 
 if __name__ == '__main__':
