@@ -33,9 +33,9 @@ class PowerConsumptionTest:
             self.smu.read_termination = '\n'
             self.smu.write_termination = '\n'
             logging.debug('Set SMU as {}'.format(self.smu))
-            self.smu.write('*IDN?\n')
+            self.smu.write('*IDN?')          # Apparently write message already
+                                             # has termination character '\n'
             bytes_back = self.smu.read_bytes(1)
-            # If it times out, it is broken. I don't know what it times out with.
             logging.info('Queried SMU for IDN and received the following message back:\n',
                          bytes_back)
         except IndexError as err:
@@ -46,6 +46,10 @@ class PowerConsumptionTest:
         except pyvisa.errors.VisaIOError as err:
             logging.error(err)
             exit()
+
+    # def execute_test(self):
+    #     # Actually perform the test
+        
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Power Consumption Test finds the worst-case power consumption'
