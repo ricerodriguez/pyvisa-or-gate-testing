@@ -34,7 +34,7 @@ class PowerConsumptionTest:
             self.smu.write_termination = '\n'
             logging.debug('Set SMU as {}'.format(self.smu))
             self.smu.write('*IDN?')
-            bytes_back = self.smu_read_bytes(1)
+            bytes_back = self.smu.read_bytes(1)
             # If it times out, it is broken. I don't know what it times out with.
             logging.info('Queried SMU for IDN and received the following message back:\n',
                          bytes_back)
