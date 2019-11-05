@@ -13,4 +13,21 @@ __author__ = "Victoria (Rice) Rodriguez, Isaac Morales"
 __email__ = "rice.rodriguez@ttu.edu, isaac.morales@ttu.edu"
 __status__ = "Prototype"
 
+import pyvisa
+import logging
 
+class PowerConsumptionTest:
+    def __init__(self):
+        self.rm = pyvisa.ResourceManager()
+        self.smu = None
+        self.__config_instr()
+
+    def __config_instr(self):
+        # First get the SMU from the list of resources
+        try:
+            self.smu = rm.list_resources()[0]
+            logging.debug("Set SMU as {}".format(self.smu))
+        except IndexError as err:
+            logging.error("No instruments are connected to the computer. Please try again.")
+            exit()
+            
