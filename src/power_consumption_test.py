@@ -28,7 +28,7 @@ class PowerConsumptionTest:
     def __config_instr(self,rm):
         # First get the SMU from the list of resources
         try:
-            self.smu = rm.open_resource(rm.list_resources()[0])
+            self.smu = rm.open_resource(rm.list_resources()[-1])
             self.smu.read_termination = '\n'
             self.smu.write_termination = '\n'
             logging.debug('Set SMU as {}'.format(self.smu))
