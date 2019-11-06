@@ -16,12 +16,13 @@ __status__ = "Prototype"
 import pyvisa
 import logging
 import argparse
+import pprint
 
 class PowerConsumptionTest:
     def __init__(self):
         rm = pyvisa.ResourceManager()
         self.list_resources = rm.list_resources()
-        logging.info('All resources:\n',str(self.list_resources))
+        logging.info('All resources:\n',pprint.pformat(self.list_resources))
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
         self.smu = None
         self.__config_instr(rm)
@@ -41,14 +42,17 @@ class PowerConsumptionTest:
         except IndexError as err:
             logging.error(err)
             logging.error('No instruments are connected to the computer. Please try again.')
-            exit()
+            exit(-1)
 
         except pyvisa.errors.VisaIOError as err:
             logging.error(err)
-            exit()
+            exit(-1)
 
-    # def execute_test(self):
-    #     # Actually perform the test
+    # Actually perform the test
+    def execute_test(self):
+        # First reset, set status to preset, and clear status
+        self.smu.write('*rst;status:preset;*cls')
+        
         
 
 if __name__ == '__main__':
@@ -60,7 +64,9 @@ if __name__ == '__main__':
     # Verbose option sets logging level to debug instead of warning
     if (args.verbose):
         logging.basicConfig(level=logging.DEBUG)
+        # logging.setLevel(logging.DEBUG)
     else:
         logging.basicConfig(level=logging.WARNING)
+        # logging.setLevel(logging.WARNING)
 
     pct = PowerConsumptionTest()
