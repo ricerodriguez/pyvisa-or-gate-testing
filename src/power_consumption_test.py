@@ -20,17 +20,17 @@ import pprint
 
 class PowerConsumptionTest:
     def __init__(self):
-        rm = pyvisa.ResourceManager()
-        self.list_resources = rm.list_resources()
+        self.rm = pyvisa.ResourceManager()
+        self.list_resources = self.rm.list_resources()
         logging.info('All resources:\n',pprint.pformat(self.list_resources))
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
         self.smu = None
-        self.__config_instr(rm)
+        self.__config_instr()
 
-    def __config_instr(self,rm):
+    def __config_instr(self):
         # First get the SMU from the list of resources
         try:
-            self.smu = rm.open_resource(self.list_resources[-1])
+            self.smu = self.rm.open_resource(self.list_resources[-1])
             self.smu.read_termination = '\n'
             self.smu.write_termination = '\n'
             logging.debug('Set SMU as {}'.format(self.smu))
@@ -52,7 +52,7 @@ class PowerConsumptionTest:
     def execute_test(self):
         # First reset, set status to preset, and clear status
         self.smu.write('*rst;status:preset;*cls')
-        
+        self.rm.close()
         
 
 if __name__ == '__main__':
@@ -70,3 +70,4 @@ if __name__ == '__main__':
         # logging.setLevel(logging.WARNING)
 
     pct = PowerConsumptionTest()
+    pct.execute_test()
