@@ -54,4 +54,4 @@ if __name__ == '__main__':
         # logging.setLevel(logging.WARNING)
 
     pct = PowerConsumptionTest(5)
-    pct.execute_test()
+    print(pct.execute_test())
