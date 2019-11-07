@@ -50,11 +50,11 @@ class SMUSetup:
             # First reset and clear status
             self.smu.write('*rst;outp off;*cls')
             # Set the source mode
-            self.smu.write('sour:func:mode %(mode)s')
+            self.smu.write('sour:func:mode {}'.format(mode))
             # Set the level of the source
-            self.smu.write('sour:%(mode)s:lev %(lev)s')
+            self.smu.write('sour:%(mode)s:lev {}'.format(lev))
             # Set the sensing mode
-            self.smu.write('sens:func "%(sens)s"')
+            self.smu.write('sens:func "{}"'.format(sens))
 
         except pyvisa.errors.VisaIOError as err:
             logging.error(err)
