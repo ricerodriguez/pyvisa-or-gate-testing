@@ -34,9 +34,10 @@ class PowerConsumptionTest:
             self.smu.read_termination = '\n'
             self.smu.write_termination = '\n'
             logging.debug('Set SMU as {}'.format(self.smu))
-            self.smu.write('*IDN?')          # Apparently write message already
-                                             # has termination character '\n'
-            bytes_back = self.smu.read_bytes(1)
+            bytes_back=self.smu.query('*IDN?')
+            # self.smu.write('*IDN?')          # Apparently write message already
+            #                                  # has termination character '\n'
+            # bytes_back = self.smu.read_bytes(1)
             logging.info('Queried SMU for IDN and received the following message back:\n',
                          bytes_back)
         except IndexError as err:
