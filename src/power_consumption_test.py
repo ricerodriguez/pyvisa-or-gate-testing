@@ -16,56 +16,20 @@ __status__ = "Prototype"
 import pyvisa
 import logging
 import argparse
-import pprint
+from resources import SMUSetup
 
 class PowerConsumptionTest:
-    def __init__(self,alias,vcc):
+    def __init__(self,vcc):
         self.rm = pyvisa.ResourceManager()
-        # self.list_resources = self.rm.list_resources()
-        # logging.info('All resources:\n',pprint.pformat(self.list_resources))
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
-        self.smu = None
+        self.instr = SMUSetup('volt',vcc,'curr')
+        self.smu = instr.smu
         self.res = None
-        self.__verify(alias)
-        self.__setup(vcc)
-
-    # Verify that the instrument is connected and communication is able to take place
-    def __verify(self,alias):
-        # First get the SMU from the list of resources
-        try:
-            # self.smu = self.rm.open_resource(self.list_resources[-1])
-            self.smu = self.rm.open_resource(alias)
-            self.smu.read_termination = '\n'
-            self.smu.write_termination = '\n'
-            logging.debug('Set SMU as %(self.smu)s')
-            bytes_back=self.smu.query('*IDN?')
-        except IndexError as err:
-            logging.error(err)
-            logging.error('No instruments are connected to the computer. Please try again.')
-            exit(-1)
-
-        except pyvisa.errors.VisaIOError as err:
-            logging.error(err)
-            exit(-1)
-
-    def __setup(self,vcc):
-        try:
-            # First reset and clear status
-            self.smu.write('*rst;outp off;*cls')
-            # Set the source mode to voltage
-            self.smu.write('sour:func:mode volt')
-            # Set the voltage to whatever the VCC is supposed to be
-            self.smu.write('sour:volt:lev %(vcc)s')
-            # Set the sensing mode to current
-            self.smu.write('sens:func "curr"')
-        except pyvisa.errors.VisaIOError as err:
-            logging.error(err)
-
 
     # Actually perform the test
     def execute_test(self,vcc=None):
         if not vcc is None:
-            self.__setup(vcc)
+            self.instr.setup('volt',vcc,'curr')
         # Turn the output on
         self.smu.write('outp on')
         # Read the voltage
@@ -89,5 +53,5 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.WARNING)
         # logging.setLevel(logging.WARNING)
 
-    pct = PowerConsumptionTest('SMU2400',5)
+    pct = PowerConsumptionTest(5)
     pct.execute_test()

@@ -19,23 +19,27 @@ import pyvisa
 import logging
 
 class SMUSetup:
-    def __init__(self,alias,mode,lev,sens):
+    def __init__(self,mode,lev,sens):
         self.rm = pyvisa.ResourceManager()
         self.smu = None
         self.res = None
-        self.__verify(alias)
+        self.__verify()
         self.setup(mode,lev,sens)
 
     # Verify that the instrument is connected and communication is able to take place
-    def __verify(self,alias):
+    def __verify(self):
         # First get the SMU from the list of resources
         try:
-            self.smu = self.rm.open_resource(alias)
+            self.smu = self.rm.open_resource('SMU2400')
             self.smu.read_termination = '\n'
             self.smu.write_termination = '\n'
             logging.debug('Set SMU as %(self.smu)s')
             bytes_back=self.smu.query('*IDN?')
             logging.debug('Received identity of SMU as: %(bytes_back)s')
+
+        except AttributeError as err:
+            logging.error(err)
+            exit(-1)
 
         except pyvisa.errors.VisaIOError as err:
             logging.error(err)
@@ -51,5 +55,6 @@ class SMUSetup:
             self.smu.write('sour:%(mode)s:lev %(lev)s')
             # Set the sensing mode
             self.smu.write('sens:func "%(sens)s"')
+
         except pyvisa.errors.VisaIOError as err:
             logging.error(err)
