@@ -25,6 +25,7 @@ class PowerConsumptionTest:
         logging.info('All resources:\n',pprint.pformat(self.list_resources))
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
         self.smu = None
+        self.res = None
         self.__config_instr()
 
     def __config_instr(self):
@@ -50,9 +51,21 @@ class PowerConsumptionTest:
             exit(-1)
 
     # Actually perform the test
-    def execute_test(self):
-        # First reset, set status to preset, and clear status
-        self.smu.write('*rst;status:preset;*cls')
+    def execute_test(self,vcc):
+        # First reset and clear status
+        self.smu.write('*rst;outp off;*cls')
+        # Set the source mode to voltage
+        self.smu.write('sour:func:mode volt')
+        # Set the voltage to whatever the VCC is supposed to be
+        self.smu.write('sour:volt:lev %(vcc)s')
+        # Set the sensing mode to current
+        self.smu.write('sens:func "curr"')
+        # Turn the output on
+        self.smu.write('outp on')
+
+        # Read the voltage
+        self.res = self.smu.query('read?')
+        return self.res
         self.rm.close()
         
 
