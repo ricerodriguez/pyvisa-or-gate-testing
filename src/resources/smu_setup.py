@@ -52,7 +52,7 @@ class SMUSetup:
             # Set the source mode
             self.smu.write('sour:func:mode {}'.format(mode))
             # Set the level of the source
-            self.smu.write('sour:%(mode)s:lev {}'.format(lev))
+            self.smu.write('sour:{}:lev {}'.format(mode,lev))
             # Set the sensing mode
             self.smu.write('sens:func "{}"'.format(sens))
 
