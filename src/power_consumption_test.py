@@ -23,7 +23,7 @@ class PowerConsumptionTest:
         self.rm = pyvisa.ResourceManager()
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
         self.instr = SMUSetup('volt',vcc,'curr')
-        self.smu = instr.smu
+        self.smu = self.instr.smu
         self.res = None
 
     # Actually perform the test
