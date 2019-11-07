@@ -18,12 +18,9 @@ import logging
 import argparse
 import pprint
 
-class PowerConsumptionTest:
-    def __init__(self,alias,vcc):
+class SMUSetup:
+    def __init__(self,alias,vcc=None):
         self.rm = pyvisa.ResourceManager()
-        # self.list_resources = self.rm.list_resources()
-        # logging.info('All resources:\n',pprint.pformat(self.list_resources))
-        self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
         self.smu = None
         self.res = None
         self.__verify(alias)
@@ -33,7 +30,6 @@ class PowerConsumptionTest:
     def __verify(self,alias):
         # First get the SMU from the list of resources
         try:
-            # self.smu = self.rm.open_resource(self.list_resources[-1])
             self.smu = self.rm.open_resource(alias)
             self.smu.read_termination = '\n'
             self.smu.write_termination = '\n'
@@ -48,7 +44,7 @@ class PowerConsumptionTest:
             logging.error(err)
             exit(-1)
 
-    def __setup(self,vcc):
+    def __setup(self,vcc=None):
         try:
             # First reset and clear status
             self.smu.write('*rst;outp off;*cls')
@@ -74,19 +70,19 @@ class PowerConsumptionTest:
         self.rm.close()
         
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Power Consumption Test finds the worst-case power consumption'
-                                     'for both static and dynamic operational conditions.')
-    parser.add_argument('--verbose','-v',action='store_true',help='output verbosely')
-    args = parser.parse_args()
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser(description='Power Consumption Test finds the worst-case power consumption'
+#                                      'for both static and dynamic operational conditions.')
+#     parser.add_argument('--verbose','-v',action='store_true',help='output verbosely')
+#     args = parser.parse_args()
 
-    # Verbose option sets logging level to debug instead of warning
-    if (args.verbose):
-        logging.basicConfig(level=logging.DEBUG)
-        # logging.setLevel(logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.WARNING)
-        # logging.setLevel(logging.WARNING)
+#     # Verbose option sets logging level to debug instead of warning
+#     if (args.verbose):
+#         logging.basicConfig(level=logging.DEBUG)
+#         # logging.setLevel(logging.DEBUG)
+#     else:
+#         logging.basicConfig(level=logging.WARNING)
+#         # logging.setLevel(logging.WARNING)
 
-    pct = PowerConsumptionTest('SMU2400',5)
-    pct.execute_test()
+#     pct = PowerConsumptionTest('SMU2400',5)
+#     pct.execute_test()

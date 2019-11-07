@@ -11,8 +11,8 @@ Procedure:
     2. Force a current of Ifb = 250uA.
     3. Measure the voltage Vpin on the pin under test.
 '''
-__author__ = "Victoria (Rice) Rodriguez, Isaac Morales"
-__email__ = "rice.rodriguez@ttu.edu, isaac.morales@ttu.edu"
+__author__ = "Victoria (Rice) Rodriguez"
+__email__ = "rice.rodriguez@ttu.edu"
 __status__ = "Prototype"
 
 import pyvisa
