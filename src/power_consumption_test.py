@@ -70,6 +70,7 @@ class PowerConsumptionTest:
         self.smu.write('outp on')
         # Read the voltage
         self.res = self.smu.query('read?')
+        self.smu.write('*rst;outp off;*cls')
         return self.res
         self.rm.close()
         
