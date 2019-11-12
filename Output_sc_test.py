@@ -37,7 +37,7 @@ class OutputScTest:
 
         #basically the same as the power consumption test
     def execute_test(self,vcc = None):
-        if not vcis None:
+        if not vcc is None:
             self.instr.setup('volt',vcc,'curr')
         #turn the output on
         self.smu.write('outp on')
@@ -45,6 +45,22 @@ class OutputScTest:
         self.smu.write('*rst;outp off;*cls;')
         return self.res
         self.sm.close()
+
+    def document(self,info):
+        testNum = input('is this the first chip? y/n ')
+
+        if testNum == 'y':
+            reults = open("OutputShortCurrentTest.txt","w")
+            resulst.write("Testing chip number: " + testNum)
+            logging.debug('chip number: ' + testNum)
+        else:
+            results = open("OutputShortCurrentTest.txt","a")
+            resulst.write("Testing chip number: " + testNum)
+            logging.debug('chip number: ' + testNum)
+
+        results.write('\n {} \n'.format(info))
+        results.close()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description= 'The Output Short Current Test verifies the output current drive of a'
         'device output pins is sustained at both high and low output voltages')
@@ -58,16 +74,8 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.WARNING)
         # logging.setLevel(logging.WARNING)
-    testNum = input('which chip are you on?')
-
-    if tesNum == '1':
-        reults = open("OutputShortCurrentTest.txt","w")
-        resulst.write("Testing chip number: " + testNum)
-    else:
-        reults = open("OutputShortCurrentTest.txt","a")
-        resulst.write("Testing chip number: " + testNum)
 
     ost = OutputScTest(3.3)
     boom = ost.execute_test()
     print(boom)
-    results.write('\n {} \n'.format(boom))
+    ost.document(boom)
