@@ -58,5 +58,16 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.WARNING)
         # logging.setLevel(logging.WARNING)
+    testNum = input('which chip are you on?')
+
+    if tesNum == '1':
+        reults = open("OutputShortCurrentTest.txt","w")
+        resulst.write("Testing chip number: " + testNum)
+    else:
+        reults = open("OutputShortCurrentTest.txt","a")
+        resulst.write("Testing chip number: " + testNum)
+
     ost = OutputScTest(3.3)
-    print(ost.execute_test())
+    boom = ost.execute_test()
+    print(boom)
+    results.write('\n {} \n'.format(boom))
