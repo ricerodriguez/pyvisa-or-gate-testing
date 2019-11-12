@@ -29,6 +29,7 @@ __status__ = "Prototype"
 import pyvisa
 import logging
 import argparse as arg
+from resources import SMUSetup
 
 class VoltageThreshold:
     def __init__(self):
@@ -36,30 +37,12 @@ class VoltageThreshold:
         self.list_resources = self.rm.list_resources()
         logging.info('All resources:\n',pprint.pformat(self.list_resources)
         self,msg = 'Please make sure you connected one input pin and one output pin'
-        self.smu = None
+        self.instr = SMUSetup('volt', 0 ,'volt')
+        self.smu = self.instr.smu
         self.res = None
-        self.__smuConfig(self)
 
-    def __smuConfig(self):
-        try:
-            self.smu = self.rm.open_resource(self.list_resources[-1])
-            self.smu.read_termination = '\n'
-            self.smu.write_termination = '\n'
-            logging.debug('set SMU as {}'.format(self.smu))
-            bytes_back = self.smu.query('*IDN?')
-            logging.info('Queried SMU for IDN and received the following message back: \n',
-                        self.smu.read_bytes(1))
 
-        except Exception as err:
-            logging.erroer(err)
-            logging.error('Make sure everything is connected correctly! :)')
-            exit()
-
-        except pyvisa.errors.VisaIOerror as err:
-            logging,error(err)
-            exit(-1)
-
-    def findThresh(self, Vcc, pinStart):
+    def execute_test(self, Vcc, pinStart):
         pinOut = 0
         Vin = 0
             #reset,set to preset,clear
@@ -68,13 +51,17 @@ class VoltageThreshold:
             Vin = Vcc      #slowly move our way down from VCC
             self.smu.write('sour:func:mode: volt')
             for thresh in range(Vin, 0, -.1):
-                if pinOut == 0:
+                self.smu.setup('volt', thresh, 'curr')
+                self.smu.write('outp on')
+                if pinOut == 0: 
                     return thresh
                 else:
                      continue
         else:
             Vin = 0
             for thresh in range(Vin, Vcc, .1):
+                self.smu.setup('volt', thresh, 'curr')
+                self.smu.write('outp on')
                 if pinOut == 1:
                     return thresh
                 else:
@@ -98,5 +85,5 @@ if __name__ == '__main__':
 
 
     vt = VoltageThreshold()
-    #Threshold =  vt.findThresh(Vcc,pinStart)
+    Threshold =  vt.execute_test(Vcc,pinStart)
     # print('Threshold')
