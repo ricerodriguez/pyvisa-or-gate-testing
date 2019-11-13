@@ -47,11 +47,11 @@ class ContactTest:
 
         if testNum == 'y':
             reults = open("ContactTest.txt","w")
-            resulst.write("Testing chip number: " + testNum)
+            results.write("Testing chip number: " + testNum)
             logging.debug('chip number: ' + testNum)
         else:
             results = open("ContactTest.txt","a")
-            resulst.write("Testing chip number: " + testNum)
+            results.write("Testing chip number: " + testNum)
             logging.debug('chip number: ' + testNum)
 
         results.write('\n {} \n'.format(info))
