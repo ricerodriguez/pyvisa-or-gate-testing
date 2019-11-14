@@ -12,10 +12,10 @@ from time import sleep
 import serial.tools.list_ports as list_ports
 
 class RelayBoard:
-    def __init__(self,snum):
+    def __init__(self,mode=None):
         self.device = None
         for pinfo in list_ports.comports():
-            if pinfo.serial_number == snum:
+            if pinfo.serial_number == 6:
                 self.device = serial.Serial(pinfo.device)
             else:
                 continue
@@ -25,7 +25,6 @@ class RelayBoard:
 
 
     def set_pins(list_pins,temp=None):
-        
         pins = '0000000000000000'
         for pin in pins:
             try:
@@ -36,7 +35,7 @@ class RelayBoard:
         if temp is None:
             self.pins = int(pins,2)
         else:
-            return pins
+            return int(pins,2)
 
     def test_cases(r):
         self.device.reset_input_buffer()
