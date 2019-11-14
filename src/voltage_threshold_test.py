@@ -33,68 +33,47 @@ from resources import SMUSetup
 from time import sleep
 
 class VoltageThreshold:
-    def __init__(self):
+    def __init__(self, relay):
         self.rm = pyvisa.ResourceManager()
         self.msg = 'Please make sure you connected one input pin and one output pin'
         self.instr = SMUSetup('volt', 0 ,'volt')
         self.smu = self.instr.smu
-        self.smu.find_arduino('6')
         self.res = None
 
+        self.relay = relay
 
-    def execute_test(self, Vcc, pinStart, pinPos):
-#         pinOut = 0
-#         Vin = 0
-#             #reset,set to preset,clear
-#         self.smu.write('*rst;outp off;*cls')
-#         if pinStart:    #if we're starting at 1
-#             Vin = Vcc      #slowly move our way down from VCC
-#             self.smu.write('sour:func:mode: volt')
-#             for thresh in range(Vin, 0, -.1):
-#                 self.smu.setup('volt', thresh, 'curr')
-#                 self.smu.write('outp on')
-#                 if pinOut == 0:
-#                     return thresh
-#                 else:
-#                      continue
-#         else:
-#             Vin = 0
-#             for thresh in range(Vin, Vcc, .1):
-#                 self.smu.setup('volt', thresh, 'curr')
-#                 self.smu.write('outp on')
-#                 if pinOut == 1:
-#                     return thresh
-#                 else:
-#                     continue
-# 9225 for a
-# 18450 for b
-        self.smu.Multirelay(pinPos)
+
+    def execute_test(self, Vcc, pinStart):
+
+        # 9225 for a
+        # 18450 for b
+        # self.relay.multirelay(pinPos)
         thresh_0, thresh_1, thresh_2, thresh_3 = 0
         if pinStart:
             start = Vcc * 10 + 1
             finish = 0
             step = -1
-            readOut = 0
+            # readOut = 0
         else:
             start = 0
             finish = Vcc * 10 + 1
             step = 1
-            readOut = 1
+            # readOut = 1
 
+            #for each step up or down
         for volts in range(start, finish, step):
+            #write the new voltage to the input pin we're working with
             self.smu.setup('volt', volts/10, 'curr')
             self.smu.write('outp on')
+            #wait a bit before reading the result at the output
             sleep(.025)
-            read = int(self.smu.read_inputs(), base = 2)
+                #make sure we read it as a binary value
+            read = int(self.relay.read_inputs(), base = 2)
             print(volts,read)
-            if read & 0b0001 != readOut and thresh_0 == 0:
-                thresh_0 = volts
-            if read & 0b0010 != readOut << 1 and thresh_1 == 0:
-                thresh_1 = volts
-            if read & 0b0100 != readOut << 2 and thresh_2 == 0:
-                thresh_2 = volts
-            if read & 0b1000 != readOut << 3 and thresh_3 == 0:
-                thresh_3 = volts
+                #we may need to mask later? idk rn
+            if read != pinStart and thresh_0 == 0:
+                thresh = volts
+
 
         self.rm.close()
         return thresh_0, thresh_1, thresh_2, thresh_3
@@ -132,14 +111,11 @@ if __name__ == '__main__':
     Vcc = input('What is the Vcc of your device? \n')
     pinStart = bool(input('Are starting with an output of 1 or 0? \n'))
     choice = input('are you testing pins A or B? \n')
-    if choice == 'A':
-        pinPos = 9225
-    elif choise == 'B':
-        pinPos = 18450
+
 
 
 
     vt = VoltageThreshold()
-    Thresholds =  vt.execute_test(Vcc,pinStart,pinPos)
+    Thresholds =  vt.execute_test(Vcc,pinStart)
     vt.execute_test(Thresholds)
     # print('Threshold')
