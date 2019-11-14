@@ -38,7 +38,7 @@ class VoltageThreshold:
         self.msg = 'Please make sure you connected one input pin and one output pin'
         self.instr = SMUSetup('volt', 0 ,'volt')
         self.smu = self.instr.smu
-        self.smu.find_arduino(6)
+        self.smu.find_arduino('6')
         self.res = None
 
 
@@ -96,6 +96,7 @@ class VoltageThreshold:
             if read & 0b1000 != readOut << 3 and thresh_3 == 0:
                 thresh_3 = volts
 
+        self.rm.close()
         return thresh_0, thresh_1, thresh_2, thresh_3
 
     def document(self,info):
@@ -129,8 +130,8 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.WARNING)
 
     Vcc = input('What is the Vcc of your device? \n')
-    pinStart = bool(input('What are you starting the input pin at? 1 or 0 \n'))
-    choice = input('are you testing pins A or B?')
+    pinStart = bool(input('Are starting with an output of 1 or 0? \n'))
+    choice = input('are you testing pins A or B? \n')
     if choice == 'A':
         pinPos = 9225
     elif choise == 'B':
