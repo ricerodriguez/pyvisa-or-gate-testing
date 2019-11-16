@@ -16,7 +16,9 @@ import logging
 import argparse
 import pprint
 import PySimpleGUI as gui
-from . import *
+# from . import *
+from contact_test import ContactTest
+from power_consumption_test import PowerConsumptionTest
 from resources import RelayBoard
 LIST_TESTS = ['Contact Test','Power Consumption Test','Voltage Threshold Test','Output Short Current Test','Output Drive Current Test','Functional Test']
 class TotalDataset:
@@ -26,6 +28,7 @@ class TotalDataset:
         self.chips = []
         self.sum_ct = []
         self.Cpk = None
+        self.relay_board = RelayBoard()
 
     def add_chip(self,chip):
         self.chips.append(chip)
@@ -50,7 +53,7 @@ class TotalDataset:
 
 # Contains the dataset for the individual chip
 class ICDataset:
-    def __init__(self,num,pins):
+    def __init__(self,relay_board,num,pins):
         logging.debug('Created a new IC dataset object reference, number %(num)s')
         # List of what the pins are
         self.pins = pins
@@ -58,21 +61,22 @@ class ICDataset:
         self.num = num
         # References to the subclasses
         self.refs = {}
-        self.relay_board = RelayBoard()
+        self.relay_board = relay_board
 
     def contact_test(self):
         logging.debug('Beginning the Contact Test')
         gui.PopupOK('Please move the yellow header to VCC and GND')
-        con = ContactTest()
+        con = ContactTest(self.pins)
         # Add the object reference to the dict so we have access to it
         self.refs['contact'] = con
+        valid_pins = [i for i,pin in enumerate(self.pins) if pin != 'VCC' and pin != 'GND']
         # On all pins except VCC and GND
-        for pin in [i for i,pin in enumerate(self.pins) if pin != 'VCC' and pin != 'GND']:
+        for i,pin in enumerate(valid_pins):
             self.relay_board.set_relay(pin)
-            con.execute_test_pin()
+            con.execute_test_pin(pin,i==len(valid_pins)-1)
             # self.contact_res.append(con.execute_test_pin())
             
-        logging.info('Contact Test Results: {}'.format(pprint.pformat(self.contact_res)))
+        # logging.info('Contact Test Results: {}'.format(pprint.pformat(self.contact_res)))
 
     def power_consumption_test(self):
         logging.debug('Beginning the Power Consumption Test')
@@ -95,7 +99,7 @@ def start_tests(pin_vals,tests):
     chip_set = TotalDataset(tests)
     chip_count = 1
     while True:
-        chip = ICDataset(chip_count,pin_vals)
+        chip = ICDataset(chip_set.relay_board,chip_count,pin_vals)
         chip_set.run_tests(chip)
         answer=gui.PopupYesNo('Tests finished for chip \#{}. Do you want to test another chip?'.format(chip_count))
         if answer=='Yes':

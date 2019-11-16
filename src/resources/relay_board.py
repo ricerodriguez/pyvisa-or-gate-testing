@@ -41,7 +41,7 @@ class RelayBoard:
     def set_relay(self,i):
         self.device.reset_input_buffer()
         self.device.write('s{}'.format(i).encode('utf-8'))
-        self.device.readline()
+        # self.device.readline()
 
     def read_inputs(self):
         self.device.reset_input_buffer()
@@ -49,7 +49,7 @@ class RelayBoard:
         self.device.write('o'.encode('utf-8'))
         sleep(.05)
         c = self.device.read(4)
-        self.device.readline()
+        # self.device.readline()
         return c
 
     # Turns on multiple relays, very finicky about sending data.
@@ -59,8 +59,8 @@ class RelayBoard:
             raise ValueError('No pin set up has been defined. Either use the set_pins function or provide a list of pins you\'d like to activate into the parameters of this function.')
         elif list_pins is None:
             self.device.write('*{}'.format(self.pins).encode('utf-8'))
-            self.device.readline()
+            # self.device.readline()
         else:
             num=self.set_pins(list_pins,True)
             self.device.write('*{}'.format(num).encode('utf-8'))
-            self.device.readline()
+            # self.device.readline()
