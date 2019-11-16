@@ -10,12 +10,19 @@ Procedure:
     2. Force the voltage level on the output pin under test to be 0 VDC
     3. Measure the current draw Ioh from the output pin under test
 
+Outcomes:
+    Passing Condition: Ioh >= .04 A
+    Failing Condition: Ioh < .04 A
 
-    Author's note:
-        so far i think we're going to make one input logic high bc it's less work
-        then we're going to physically ground all the output pins.
-            for the circuitry we're grouding and measuring the outputs
-        I hope rice comes back soon :(
+Author's note:
+    so far i think we're going to make one input logic high bc it's less work
+    then we're going to physically ground all the output pins.
+    for the circuitry we're grouding and measuring the outputs
+
+
+
+
+        I wonder what we should do about the PSU
 '''
 
 __author__ = "Isaac Morales"
@@ -30,36 +37,23 @@ from resource import SMUSetup
 class OutputScTest:
     def __init__(self,vcc):
         self.rm = pyvisa.ResourceManager()
-        self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
+        self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the input pin.'
         self.instr = SMUSetup('volt',vcc,'curr')
         self.smu = self.instr.smu
         self.res = None
 
         #basically the same as the power consumption test
-    def execute_test(self,vcc = None):
+    def execute_test(self,vcc):
         if not vcc is None:
             self.instr.setup('volt',vcc,'curr')
         #turn the output on
         self.smu.write('outp on')
-        self,res  = self.smu.query('read?')
+        self.smu.write('form:elem:curr')
+        self.res  = self.smu.query('read?')
         self.smu.write('*rst;outp off;*cls;')
         return self.res
-        self.sm.close()
+        self.rm.close()
 
-    def document(self,info):
-        testNum = input('is this the first chip? y/n ')
-
-        if testNum == 'y':
-            reults = open("OutputShortCurrentTest.txt","w")
-            resulst.write("Testing chip number: " + testNum)
-            logging.debug('chip number: ' + testNum)
-        else:
-            results = open("OutputShortCurrentTest.txt","a")
-            resulst.write("Testing chip number: " + testNum)
-            logging.debug('chip number: ' + testNum)
-
-        results.write('\n {} \n'.format(info))
-        results.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description= 'The Output Short Current Test verifies the output current drive of a'
@@ -75,7 +69,7 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.WARNING)
         # logging.setLevel(logging.WARNING)
 
-    ost = OutputScTest(3.3)
-    boom = ost.execute_test()
-    print(boom)
-    ost.document(boom)
+    ost = OutputScTest(5)
+    Ires = ost.execute_test()
+    # print(Ires)
+    # ost.document(boom)
