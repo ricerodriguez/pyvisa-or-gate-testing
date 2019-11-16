@@ -62,24 +62,28 @@ class VoltageThreshold:
         for currPin in self.pins:
             #for each step up or down
             #stepping down
+            logging.warning('on pin number: {}'.format(currPin))
             if pinStart:
-                start = Vcc * 10 + 1
-                finish = 0
+                start = Vcc * 10
+                finish = -1
                 step = -1
                 # readOut = 0
                 compare = 20 # Vih
                 #stepping up
+                logging.warning('starting at vcc, going down by .1')
             else:
                 start = 0
                 finish = Vcc * 10 + 1
                 step = 1
                 compare = 8 # Vil
+                logging.warning('starting at 0, going down up .1')
             for volts in range(start, finish, step):
+                logging.warning('current volage level:{}'.format(volts))
                 #write the new voltage to the input pin we're working with
                 self.instr.setup('volt', volts/10, 'curr')
                 self.smu.write('outp on')
                 #wait a bit before reading the result at the output
-                sleep(.025)
+                time.sleep(.025)
                     #make sure we read it as a binary value
                 read = int(self.relay.read_inputs(), base = 2)
                 print(volts,read)
@@ -104,6 +108,7 @@ class VoltageThreshold:
                         self.meas['pin {}'.foramt(currPin)] = thresh, thresh
                 else:
                     self.smu.write('*rst;outp off;*cls;')
+
 
         self.rm.close()
 
