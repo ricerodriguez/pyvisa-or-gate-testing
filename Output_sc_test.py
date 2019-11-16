@@ -41,7 +41,7 @@ class OutputScTest:
         self.instr = SMUSetup('volt',vcc,'curr')
         self.smu = self.instr.smu
         self.meas = {}
-        self.currPin = pins[0]
+        # self.currPin = pins[0]
 
         #basically the same as the power consumption test
     def execute_test(self,vcc, pin = 0):
