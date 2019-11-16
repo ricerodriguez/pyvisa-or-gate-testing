@@ -17,6 +17,7 @@ import argparse
 import pprint
 import PySimpleGUI as gui
 # from . import *
+from statistics import mean
 from contact_test import ContactTest
 from power_consumption_test import PowerConsumptionTest
 from resources import RelayBoard
@@ -66,10 +67,12 @@ class ICDataset:
     def contact_test(self):
         logging.debug('Beginning the Contact Test')
         gui.PopupOK('Please move the yellow header to VCC and GND')
-        con = ContactTest(self.pins)
+
+        valid_pins = [f'pin {i+1}' for i,pin in enumerate(self.pins) if pin != 'VCC' and pin != 'GND']
+        con = ContactTest(valid_pins)
         # Add the object reference to the dict so we have access to it
-        self.refs['contact'] = con
-        valid_pins = [i for i,pin in enumerate(self.pins) if pin != 'VCC' and pin != 'GND']
+        self.refs['contact test'] = con
+        # print(valid_pins)
         # On all pins except VCC and GND
         for i,pin in enumerate(valid_pins):
             self.relay_board.set_relay(pin)
@@ -81,10 +84,10 @@ class ICDataset:
     def power_consumption_test(self):
         logging.debug('Beginning the Power Consumption Test')
         pctest = PowerConsumptionTest(5)
-        self.refs['power consumption'] = pctest
+        self.refs['power consumption test'] = pctest
 
 
-def start_tests(pin_vals,tests):
+def start_tests(fname,pin_vals,tests):
     tab_layout = [[gui.Image('resources/placeholder.png')]]
     hist_layout = [gui.TabGroup([[gui.Tab(title=test,
                                           layout=[[gui.Image('resources/placeholder.png')]],
@@ -94,18 +97,31 @@ def start_tests(pin_vals,tests):
                hist_layout]
     win = gui.Window('Test',layout2)
     event,val=win.read(timeout=10)
+    # Make the list of pins
+    list_pins = ['pin {}'.format(i) for i in range(1,len(pin_vals)+1)]
     # Start by making the overarching dataset class
-
     chip_set = TotalDataset(tests)
     chip_count = 1
+
     while True:
         chip = ICDataset(chip_set.relay_board,chip_count,pin_vals)
+        chip_set.add_chip(chip)
         chip_set.run_tests(chip)
-        answer=gui.PopupYesNo('Tests finished for chip \#{}. Do you want to test another chip?'.format(chip_count))
+        answer=gui.PopupYesNo('Tests finished for chip #{}. Do you want to test another chip?'.format(chip_count))
         if answer=='Yes':
             chip_count+=1
             continue
         else:
+            # Done collecting data
+            # Get all the averages
+            averages = {t:{p:mean((c.refs[t].meas[p] for c in chip_set.chips)) for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals)} for t in tests}
+            print(pprint.pformat(averages))
+            with open(fname,'w+') as f:
+                for t in tests:
+                    f.write(f'{t.upper():~^50}\n')
+                    for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals):
+                        f.write(f'{p.upper()} AVERAGE = {averages[t][p]}\n')
+
             break
     return
 
@@ -114,9 +130,10 @@ if __name__ == '__main__':
     started=False
     w_max,h_max=80,100
     off=2
+    max_pins=16
     left_pins = gui.Column(list(([gui.T('PIN {}'.format(i+1),key='pin_{}'.format(i+1),visible=False),
                                   gui.Combo(default_value='Select',values=('VCC','GND','IN','OUT'),font=('Helvetica',14),key=('left_{}'.format(i+1)),auto_size_text=True,visible=False)] for i in range(8))),key='left_pins')
-    right_pins = gui.Column(list(([gui.T('PIN {}'.format(i+9),key='pin_{}'.format(i+9),visible=False),
+    right_pins = gui.Column(list(([gui.T(f'PIN {max_pins-i}',key=f'pin_{max_pins-i}',visible=False),
                                    gui.Combo(default_value='Select',values=('VCC','GND','IN','OUT'),font=('Helvetica',14),key=('right_{}'.format(i+1)),auto_size_text=True,visible=False)] for i in range(8))),key='right_pins')
     # test_boxes = [[gui.Checkbox(text = test,justification='left'),gui.Checkbox(text=LIST_TESTS[i+3],justification='right')] for (i,test) in enumerate(LIST_TESTS) if i<3]
     test_boxes = [[gui.Column(list([gui.Checkbox(text=test,key=test.lower())] for (i,test) in enumerate(LIST_TESTS) if i<3)),
@@ -144,11 +161,9 @@ if __name__ == '__main__':
     while True:
         event,val = wcurr.Read(timeout=10)
         graph.Erase()
-        # chip=graph.DrawRectangle(top_left=(-w,h),bottom_right=(w,-h),fill_color='gray',line_color='black')
         rows = int(val['num_pins']/2)
         w,h=w_max,(rows/8)*h_max
         arc_points = [int(.15*w),int(.8*h_max)]
-        # graph.draw_line((-w,-h),(-w,h),color='black')
         graph.draw_line((-w,h_max),(-arc_points[0],h_max),color='black')
         arc=graph.draw_arc((-arc_points[0],h_max),(arc_points[0],arc_points[1]),arc_color='black',extent=-180,start_angle=0,style='arc')
         graph.draw_line((arc_points[0],h_max),(w,h_max),color='black')
@@ -156,28 +171,31 @@ if __name__ == '__main__':
         graph.draw_line((w,-h),(-w,-h))
         graph.draw_line((-w,-h),(-w,h_max))
 
+        event,val = wcurr.Read(timeout=10)
+        rows = int(val['num_pins']/2)
         for i in range (8):
             wcurr['left_pins'].Rows[i][0].update(visible=(i+1<=rows))
             wcurr['left_pins'].Rows[i][1].update(visible=(i+1<=rows))
-            wcurr['pin_{}'.format(i+9)].update(value='PIN {}'.format(rows+1+i))
-            wcurr['right_pins'].Rows[i][0].update(visible=(i+1<=rows))
+            wcurr['right_pins'].Rows[i][0].update(visible=(i+1<=rows),value=f'PIN {2*rows-i}')
             wcurr['right_pins'].Rows[i][1].update(visible=(i+1<=rows))
 
         if event == 'Close':
-            print(pprint.pformat(winit['left_pins'].__dict__))
-            # print(pprint.pformat(val))
             break
 
         elif event == 'Start Tests':
-            pin_vals = winit['left_pins'].ReturnValuesList[:rows]+winit['right_pins'].ReturnValuesList[:rows]
+            pin_vals = winit['left_pins'].ReturnValuesList[:rows]+winit['right_pins'].ReturnValuesList[rows-1::-1]
+            print(pin_vals)
             tests = [test for test,v in val.items() if v is True]
-            # print(pprint.pformat(winit['tests'].Rows[1][1].__dict__))
             if '' in pin_vals:
                 msg = 'Undefined value for pin {}'.format(1+pin_vals.index(''))
                 logging.error(msg)
                 gui.PopupError(msg)
+            if not val['fname_data_input']:
+                msg = 'Please select a filename to save the data to.'
+                gui.PopupGetFile(message=msg,default_extension='.csv',save_as=True)
+                
             # Change to elif after finished debugging
             elif not started:
                 wcurr.close()
-                start_tests(pin_vals,tests)
+                start_tests(val['fname_data_input'],pin_vals,tests)
             break

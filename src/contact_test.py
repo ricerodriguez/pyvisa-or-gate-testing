@@ -21,31 +21,32 @@ import argparse
 from resources import SMUSetup
 
 class ContactTest:
+    def get_valid_pins(pin_vals):
+        return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin != 'VCC' and pin != 'GND']
+    
     def __init__(self,pins):
-        self.pins = pins
         self.rm = pyvisa.ResourceManager()
         self.list_resources = self.rm.list_resources()
         # logging.info('All resources:\n',pprint.pformat(self.list_resources))
         self.msg = 'Please ground all input pins of the DUT.'
-        self.instr = SMUSetup('curr','250e-6','volt')
+        self.instr = SMUSetup(src='curr',lev='250e-6',sens='volt')
         self.smu = self.instr.smu
-        self.curr_pin = pins[0]
         # List of measurements for each pin
-        self.meas = {}
+        self.meas = dict.fromkeys(pins)
 
     # Test on single pin
     def execute_test_pin(self,pin,last=False):
         # Turn the output on
         self.smu.write('outp on')
+        # Only get the value we want
+        self.smu.write(f'form:elem volt')
         # Read the voltage
         res = self.smu.query('read?')
         self.smu.write('*rst;outp off;*cls')
         if last:
             self.rm.close()
             
-        self.meas['pin {}'.format(pin)] = res
-        self.curr_pin = pin
-            
+        self.meas[pin] = float(res)
         return res
 
     # Test the whole DUT
