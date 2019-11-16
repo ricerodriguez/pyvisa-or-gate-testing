@@ -60,20 +60,20 @@ class VoltageThreshold:
         thresh = 0
 
         for currPin in self.pins:
-                #for each step up or down
-                #stepping down
-                if pinStart:
-                    start = Vcc * 10 + 1
-                    finish = 0
-                    step = -1
-                    # readOut = 0
-                    compare = 20 # Vih
-                    #stepping up
-                else:
-                    start = 0
-                    finish = Vcc * 10 + 1
-                    step = 1
-                    compare = 8 # Vil
+            #for each step up or down
+            #stepping down
+            if pinStart:
+                start = Vcc * 10 + 1
+                finish = 0
+                step = -1
+                # readOut = 0
+                compare = 20 # Vih
+                #stepping up
+            else:
+                start = 0
+                finish = Vcc * 10 + 1
+                step = 1
+                compare = 8 # Vil
             for volts in range(start, finish, step):
                 #write the new voltage to the input pin we're working with
                 self.smu.setup('volt', volts/10, 'curr')
