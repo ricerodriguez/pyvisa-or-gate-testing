@@ -35,23 +35,25 @@ import argparse
 from resource import SMUSetup
 
 class OutputScTest:
-    def __init__(self,vcc):
+    def __init__(self,vcc,pins = 0):
         self.rm = pyvisa.ResourceManager()
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the input pin.'
         self.instr = SMUSetup('volt',vcc,'curr')
         self.smu = self.instr.smu
-        self.res = None
+        self.meas = {}
+        self.currPin = pins[0]
 
         #basically the same as the power consumption test
-    def execute_test(self,vcc):
-        if not vcc is None:
-            self.instr.setup('volt',vcc,'curr')
+    def execute_test(self,vcc, pin = 0):
+        # if not vcc is None:
+        #     self.instr.setup('volt',vcc,'curr')
         #turn the output on
+        logging.warning('writing {} to SMU'.format(vcc))
         self.smu.write('outp on')
         self.smu.write('form:elem:curr')
-        self.res  = self.smu.query('read?')
+        self.meas['pin {}'.format(pin)]  = self.smu.query('read?')
         self.smu.write('*rst;outp off;*cls;')
-        return self.res
+        logging.warning('read: {}'.format(self.res))
         self.rm.close()
 
 
@@ -70,6 +72,7 @@ if __name__ == '__main__':
         # logging.setLevel(logging.WARNING)
 
     ost = OutputScTest(5)
-    Ires = ost.execute_test()
+    logging.warning('vcc is 5')
+    ost.execute_test()
     # print(Ires)
     # ost.document(boom)
