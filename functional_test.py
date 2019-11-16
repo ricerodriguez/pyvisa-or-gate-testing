@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-
-
 '''
 Description:
     The functional test makes sure that the truth table for the chosen device
@@ -30,13 +28,14 @@ from resources import SMUSetup
 
 
 class FunctionalTest:
-    def __init__(self,relay):
+    def __init__(self,relay,pins = [None *16]):
         self.rm = pyvisa.ResourceManager()
         self.msg = 'Please make sure the connections are stable.'
         self.instr = SMUSetup('volt',vcc,'curr')
         self.smu = self.instr.smu
         self.res = None
         self.outcome = None
+        self.meas = {}
 
         self.relay = relay
 
