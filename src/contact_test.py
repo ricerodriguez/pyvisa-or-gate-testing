@@ -21,24 +21,34 @@ import argparse
 from resources import SMUSetup
 
 class ContactTest:
-    def __init__(self):
+    def __init__(self,pins=[None*16]):
+        self.pins = pins
         self.rm = pyvisa.ResourceManager()
         self.list_resources = self.rm.list_resources()
         logging.info('All resources:\n',pprint.pformat(self.list_resources))
         self.msg = 'Please ground all input pins of the DUT.'
         self.instr = SMUSetup('curr','250e-6','volt')
         self.smu = self.instr.smu
-        self.res = None
+        self.curr_pin = pins[0]
+        # List of measurements for each pin
+        self.meas = {}
 
     # Test on single pin
-    def execute_test_pin(self):
+    def execute_test_pin(self,pin=None):
         # Turn the output on
         self.smu.write('outp on')
         # Read the voltage
-        self.res = self.smu.query('read?')
+        res = self.smu.query('read?')
         self.smu.write('*rst;outp off;*cls')
         self.rm.close()
-        return self.res
+        if pin is None:
+            self.meas['pin {}'.format(curr_pin)] = res
+            curr_pin = self.pins[self.pins.index(curr_pin)+1]
+        else:
+            self.meas['pin {}'.format(pin)] = res
+            curr_pin = pin
+            
+        return res
 
     # Test the whole DUT
     def execute_test(self,numpins):

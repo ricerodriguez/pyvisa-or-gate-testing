@@ -20,8 +20,9 @@ from . import *
 from resources import RelayBoard
 LIST_TESTS = ['Contact Test','Power Consumption Test','Voltage Threshold Test','Output Short Current Test','Output Drive Current Test','Functional Test']
 class TotalDataset:
-    def __init__(self):
+    def __init__(self,tests):
         logging.debug('Created a new total dataset reference.')
+        self.tests = tests
         self.chips = []
         self.sum_ct = []
         self.Cpk = None
@@ -29,18 +30,33 @@ class TotalDataset:
     def add_chip(self,chip):
         self.chips.append(chip)
 
+    def run_tests(self,chip):
+        # Go through all the tests
+        for test in self.tests:
+            if test == 'contact test':
+                chip.contact_test()
+            elif test == 'power consumption test':
+                chip.power_consumption_test()
+            elif test == 'output short current test':
+                chip.output_sc_test()
+            elif test == 'output drive current test':
+                chip.output_dc_test()
+            elif test == 'functional test':
+                chip.functional_test()
+            elif test == 'voltage threshold test':
+                chip.voltage_threshold_test()
+            else:
+                continue
+
 # Contains the dataset for the individual chip
 class ICDataset:
-    def __init__(self,num):
+    def __init__(self,num,pins):
         logging.debug('Created a new IC dataset object reference, number %(num)s')
+        # List of what the pins are
+        self.pins = pins
+        # Which chip in the set
         self.num = num
-        # A list of the measurements on each applicable pin.
-        self.contact_res = []   # All pins except VCC and GND
-        self.power_res = []
-        self.oshort_res = []
-        self.odrive_res = []
-        self.func_res = []
-        self.volt_res = []
+        # References to the subclasses
         self.refs = {}
         self.relay_board = RelayBoard()
 
@@ -50,10 +66,11 @@ class ICDataset:
         con = ContactTest()
         # Add the object reference to the dict so we have access to it
         self.refs['contact'] = con
-        # Change to pin vals
-        for pin in [i for i in range(1,16) if (i != 8 and i != 9 and i != 7 and i != 16)]:
+        # On all pins except VCC and GND
+        for pin in [i for i,pin in enumerate(self.pins) if pin != 'VCC' and pin != 'GND']:
             self.relay_board.set_relay(pin)
-            self.contact_res.append(con.execute_test_pin())
+            con.execute_test_pin()
+            # self.contact_res.append(con.execute_test_pin())
             
         logging.info('Contact Test Results: {}'.format(pprint.pformat(self.contact_res)))
 
@@ -73,9 +90,13 @@ def start_tests(pin_vals,tests):
                hist_layout]
     win = gui.Window('Test',layout2)
     event,val=win.read(timeout=10)
-
     # Start by making the overarching dataset class
-    
+
+    chip_set = TotalDataset(tests)
+    chip_count = 1
+    while True:
+        chip = ICDataset(chip_count,pin_vals)
+        chip_set.run_tests(chip)
         
     return
 
@@ -147,7 +168,7 @@ if __name__ == '__main__':
                 logging.error(msg)
                 gui.PopupError(msg)
             # Change to elif after finished debugging
-            if not started:
+            elif not started:
                 wcurr.close()
                 start_tests(pin_vals,tests)
             break
