@@ -14,8 +14,9 @@ import serial.tools.list_ports as list_ports
 class RelayBoard:
     def __init__(self,mode=None):
         self.device = None
+        self.set_relay(0)
         for pinfo in list_ports.comports():
-            if pinfo.serial_number == 6:
+            if pinfo.serial_number == '6':
                 self.device = serial.Serial(pinfo.device)
             else:
                 continue
@@ -26,11 +27,11 @@ class RelayBoard:
 
     def set_pins(list_pins,temp=None):
         pins = '0000000000000000'
-        for pin in pins:
+        for pin in list_pins:
             try:
                 pins = pins[:pin-1]+'1'+pins[pin:]
             except IndexError:
-                raise IndexError('Use indexing that starts at 1.')
+                raise ValueError('Use indexing that starts at 1.')
 
         if temp is None:
             self.pins = int(pins,2)
@@ -42,9 +43,11 @@ class RelayBoard:
         self.device.write('t{}'.format(r).encode('utf-8'))
         self.device.readline()
 
-    def relay(i):
+    # i is a number between 1 and 16
+    def set_relay(i):
+        # index = i-1
         self.device.reset_input_buffer()
-        self.device.write('s{}'.format(i).encode('utf-8'))
+        self.device.write('s{}'.format(index).encode('utf-8'))
         self.device.readline()
 
     def read_inputs():
@@ -68,6 +71,3 @@ class RelayBoard:
             num=self.set_pins(list_pins,True)
             self.device.write('*{}'.format(num).encode('utf-8'))
             self.device.readline()
-            
-        
-    

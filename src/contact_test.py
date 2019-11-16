@@ -18,7 +18,6 @@ __status__ = "Prototype"
 import pyvisa
 import logging
 import argparse
-
 from resources import SMUSetup
 
 class ContactTest:
