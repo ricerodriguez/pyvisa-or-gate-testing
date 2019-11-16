@@ -110,7 +110,7 @@ void loop()
       case 's': //Single Relay Write uses the Relay number instead of a decimal codded binary number
         if(Serial.available()>0)
         {
-          shift((1<<(Serial.parseInt()-1)));
+          shift((1<<(Serial.parseInt()-1)));  //minus 1?
         }
        else
           Serial.println(ERROR2);

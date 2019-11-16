@@ -20,6 +20,14 @@ Procedures:
 
     6. If the device produces and error, record the input voltage as Vih
 
+Outcomes:
+    Vil:
+        Passing Condition: Vil >= .8 VDC
+        Failing Condition: Vil < .8 VDC
+    Vih:
+        Passing Condition: Vih <= 2 VDC
+        Failing Condition: Vih > 2 VDC
+
 '''
 __author__ = "Isaac Morales"
 __email__ = "isaac.morales@ttu.edu"
@@ -29,7 +37,7 @@ __status__ = "Prototype"
 import pyvisa
 import logging
 import argparse as arg
-from resources import SMUSetup
+from resources import SMUSetup, RelayBoard
 from time import sleep
 
 class VoltageThreshold:
@@ -39,7 +47,7 @@ class VoltageThreshold:
         self.instr = SMUSetup('volt', 0 ,'volt')
         self.smu = self.instr.smu
         self.res = None
-
+        self.outcome = None
         self.relay = relay
 
 
@@ -48,16 +56,20 @@ class VoltageThreshold:
         # 9225 for a
         # 18450 for b
         # self.relay.multirelay(pinPos)
-        thresh_0, thresh_1, thresh_2, thresh_3 = 0
+        thresh = 0
+    #stepping down
         if pinStart:
             start = Vcc * 10 + 1
             finish = 0
             step = -1
             # readOut = 0
+            compare = 20 # Vih
+    #stepping up
         else:
             start = 0
             finish = Vcc * 10 + 1
             step = 1
+            compare = 8 # Vil
             # readOut = 1
 
             #for each step up or down
@@ -70,29 +82,28 @@ class VoltageThreshold:
                 #make sure we read it as a binary value
             read = int(self.relay.read_inputs(), base = 2)
             print(volts,read)
-                #we may need to mask later? idk rn
-            if read != pinStart and thresh_0 == 0:
+                #we may need to mask later? idk rn but if we're no longer
+                #seeing the same output, that means we hit a threshold.
+            if read != pinStart and thresh == 0:
                 thresh = volts
+                self.rm.close() #make sure you're closing this shit!
+                    #if we are stepping down and our threshold passed
+                if pinStart == True and volts <= compare:
+                    self.outcome = True #then the test was successful, we passed
+                    # self.rm.close()
+                    return thresh   #return the threshold for this OR gate
+                    #if we are stepping up and our threshold passed
+                elif pinStart == False and volts > compare:
+                    self.outcome = True #then the test was successful, we passed
+                    # self.rm.close()
+                    return thresh  #return the threshold for this OR gate
+                else: #otherwise the test failed, we failed :\
+                    self.outcome = False
+                    # self.rm.close()
+                    return thresh
+            else:
+                self.smu.write('*rst;outp off;*cls;')
 
-
-        self.rm.close()
-        return thresh_0, thresh_1, thresh_2, thresh_3
-
-    def document(self,info):
-        testNum = input('is this the first chip? y/n ')
-
-        if testNum == 'y':
-            reults = open("VoltageThresholdTest.txt","w")
-            results
-            results.write("Testing chip number: " + testNum)
-            logging.debug('chip number: ' + testNum)
-        else:
-            results = open("VoltageThresholdTest.txt","a")
-            results.write("Testing chip number: " + testNum)
-            logging.debug('chip number: ' + testNum)
-
-        results.write('\n {} \n'.format(info))
-        results.close()
 
 
 
@@ -116,6 +127,6 @@ if __name__ == '__main__':
 
 
     vt = VoltageThreshold()
-    Thresholds =  vt.execute_test(Vcc,pinStart)
+    Threshold =  vt.execute_test(Vcc,pinStart)
     vt.execute_test(Thresholds)
     # print('Threshold')
