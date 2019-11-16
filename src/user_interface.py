@@ -97,7 +97,12 @@ def start_tests(pin_vals,tests):
     while True:
         chip = ICDataset(chip_count,pin_vals)
         chip_set.run_tests(chip)
-        
+        answer=gui.PopupYesNo('Tests finished for chip \#{}. Do you want to test another chip?'.format(chip_count))
+        if answer=='Yes':
+            chip_count+=1
+            continue
+        else:
+            break
     return
 
 
