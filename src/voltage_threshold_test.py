@@ -59,9 +59,10 @@ class VoltageThreshold:
         # self.relay.multirelay(pinPos)
         thresh = 0
 
-        for currPin in self.pins:
-            #for each step up or down
-            #stepping down
+        for direction in range(0,1):
+            # for currPin in self.pins:
+                #for each step up or down
+                #stepping down
             logging.warning('on pin number: {}'.format(currPin))
             if pinStart:
                 start = Vcc * 10
@@ -108,6 +109,7 @@ class VoltageThreshold:
                         self.meas['pin {}'.foramt(currPin)] = thresh, thresh
                 else:
                     self.smu.write('*rst;outp off;*cls;')
+            pinStart = not pinStart #now do the 
 
 
         self.rm.close()
