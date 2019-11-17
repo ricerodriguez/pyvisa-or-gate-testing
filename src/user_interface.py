@@ -30,7 +30,6 @@ class TotalDataset:
         self.chips = []
         self.sum_ct = []
         self.Cpk = None
-        self.relay_board = RelayBoard()
 
     def add_chip(self,chip):
         self.chips.append(chip)
@@ -55,7 +54,7 @@ class TotalDataset:
 
 # Contains the dataset for the individual chip
 class ICDataset:
-    def __init__(self,relay_board,num,pins):
+    def __init__(self,num,pins,vcc):
         logging.debug('Created a new IC dataset object reference, number %(num)s')
         # List of what the pins are
         self.pins = pins
@@ -63,7 +62,8 @@ class ICDataset:
         self.num = num
         # References to the subclasses
         self.refs = {}
-        # self.relay_board = relay_board
+        # VCC level
+        self.vcc = vcc
 
     def contact_test(self):
         logging.debug('Beginning the Contact Test')
@@ -74,7 +74,6 @@ class ICDataset:
         # Get list of input pins
         input_pins = (i+1 for i,pin in enumerate(self.pins) if pin == 'IN')
         # Tell user which pins to set to GND
-        # msg = 'Please set pins ' + ', '.join(input_pins) + ' to GND.'
         try:
             input_pins[-1] = f'and {input_pins[-1]}'
             msg = f'Please set pins {", ".join(input_pins)} to GND.'
@@ -89,35 +88,38 @@ class ICDataset:
             msg = f'Please move the SMU probe to pin {pin}.'
             gui.Popup(msg,title='Contact Test')
             con.execute_test_pin(pin,i==len(valid_pins)-1)
-            # self.contact_res.append(con.execute_test_pin())
-        # logging.info('Contact Test Results: {}'.format(pprint.pformat(self.contact_res)))
 
     def power_consumption_test(self):
         logging.debug('Beginning the Power Consumption Test')
 
         # Get list of output pins
-        output_pins = (str(i+1) for i,pin in enumerate(self.pins) if pin == 'IN')
+        output_pins = (str(i+1) for i,pin in enumerate(self.pins) if pin == 'OUT')
         try:
             output_pins[-1] = f'and {output_pins[-1]}'
-            msg = f'Please float pins {", ".join(output_pins)}.'
+            msg = f'Please float output pins {", ".join(output_pins)}.'
             gui.Popup(msg,title='Power Consumption Test')
         except TypeError:
-            msg = f'Please set pin {input_pins} to GND.'
+            msg = f'Please float output pin {output_pins}.'
             gui.Popup(msg,title='Power Consumption Test')
-            output_pins = [output_pins]
+            # output_pins = [output_pins]
 
-        pctest = PowerConsumptionTest(5)
+        pctest = PowerConsumptionTest(self.vcc)
         self.refs['power consumption test'] = pctest
-        pctest
+
+        msg = 'Please move the SMU probe to the VCC pin {self.pins.index("VCC")+1}.'
+        gui.Popup(msg,title='Power Consumption Test')
+        # There's only one VCC pin
+        pctest.execute_test(f'pin {self.pins.index("VCC")+1}',last=True)
+
+    # def output_short_current_test(self):
         
 
 
-def start_tests(fname,pin_vals,tests):
+def start_tests(fname,pin_vals,tests,vcc):
     tab_layout = [[gui.Image('resources/placeholder.png')]]
     hist_layout = [gui.TabGroup([[gui.Tab(title=test,
                                           layout=[[gui.Image('resources/placeholder.png')]],
                                           key='tab {}'.format(test))] for test in tests])]
-    # print(pprint.pformat(hist_layout))
     layout2 = [[gui.T('Testing')],
                hist_layout]
     win = gui.Window('Test',layout2)
@@ -129,7 +131,7 @@ def start_tests(fname,pin_vals,tests):
     chip_count = 1
 
     while True:
-        chip = ICDataset(chip_set.relay_board,chip_count,pin_vals)
+        chip = ICDataset(chip_count,pin_vals,vcc)
         chip_set.add_chip(chip)
         chip_set.run_tests(chip)
         answer=gui.PopupYesNo('Tests finished for chip #{}. Do you want to test another chip?'.format(chip_count))
@@ -140,7 +142,6 @@ def start_tests(fname,pin_vals,tests):
             # Done collecting data
             # Get all the averages
             averages = {t:{p:mean((c.refs[t].meas[p] for c in chip_set.chips)) for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals)} for t in tests}
-            print(pprint.pformat(averages))
             with open(fname,'w+') as f:
                 for t in tests:
                     f.write(f'{t.upper():~^50}\n')
@@ -159,9 +160,6 @@ if __name__ == '__main__':
     offset = 265
     max_pins=16
     pin_choices = ('VCC','GND','IN','OUT')
-    # test_boxes = [[gui.Column(list([gui.Checkbox(text=test,key=test.lower())] for (i,test) in enumerate(LIST_TESTS) if i<3)),
-    #                gui.Sizer(offset+188),
-    #                gui.Column(list([gui.Checkbox(text=test,key=test.lower())]) for (i,test) in enumerate(LIST_TESTS) if i>=3)]]
     test_boxes = [[gui.Column(list([gui.Checkbox(text=test,key=test.lower())] for (i,test) in enumerate(LIST_TESTS) if i<2)),
                    gui.Sizer(offset/2-25),
                    gui.Column(list([gui.Checkbox(text=test,key=test.lower())] for (i,test) in enumerate(LIST_TESTS) if i<4 and i >=2)),
@@ -177,9 +175,7 @@ if __name__ == '__main__':
     col_hist = gui.Column([[gui.T('Histograms')],
                           [gui.Input(key='fname_hist_input'),gui.FolderBrowse()]])
 
-    path_names = [
-        # [gui.T('VCC: '),gui.Spin(values=[i for i in range(1,12)],initial_value=5,tooltip='Set the voltage needed to send to the VCC pin to power the DUT.',key='vcc_lev')],
-        [col_dataset,col_hist]]
+    path_names = [[col_dataset,col_hist]]
 
     chip_layout = [[gui.Sizer(offset),
                     gui.Column(list(([gui.T('PIN {}'.format(i+1),key='pin_{}'.format(i+1),visible=False),
@@ -219,20 +215,16 @@ if __name__ == '__main__':
                           orientation='h',
                           size=(84,20))],
               [frame_chip],
-              # [left_pins,gui.Graph(canvas_size=(2*w_max,2*h_max),graph_bottom_left=(-w_max-off,-h_max-off),graph_top_right=(w_max+off,h_max+off),key='chip'),right_pins],
               [frame_tests],
               [frame_paths],
               [gui.Button('Close'),gui.Button('Start Tests')]]
 
 
     winit=gui.Window('Main',layout).Finalize()
-    print('here')
     wcurr = winit
     graph = wcurr['chip']
     while True:
         event,val = wcurr.Read(timeout=10)
-        if loaded: event,dmp = winit.Read(timeout=10)
-        else: event,val = winit.Read(timeout=10)
         graph.Erase()
         rows = int(val['num_pins']/2)
         w,h=w_max,(rows/8)*h_max
@@ -253,12 +245,10 @@ if __name__ == '__main__':
             wcurr['right_pins'].Rows[i][1].update(visible=(i+1<=rows))
 
         if event == 'Close':
-            print(pprint.pformat(val))
             break
 
         elif event == 'Start Tests':
             pin_vals = winit['left_pins'].ReturnValuesList[:rows]+winit['right_pins'].ReturnValuesList[rows-1::-1]
-            print(pin_vals)
             tests = [test for test,v in val.items() if v is True]
             if '' in pin_vals:
                 msg = 'Undefined value for pin {}'.format(1+pin_vals.index(''))
@@ -271,7 +261,8 @@ if __name__ == '__main__':
             # Change to elif after finished debugging
             elif not started:
                 wcurr.close()
-                start_tests(val['fname_data_input'],pin_vals,tests)
+                started=True
+                start_tests(val['fname_data_input'],pin_vals,tests,val['vcc_lev'])
             break
 
         elif event == 'Open':
@@ -288,11 +279,12 @@ if __name__ == '__main__':
             config=gui.PopupGetFile(message=msg,default_extension='.config',save_as=True)
             try:
                 with open(config,'w+') as f:
-                    updater = re.sub(r'\"((?:\bFalse\b)|(?:\bTrue\b)\"|(?:\d+(?:\.\d+)?))\"','\g<1>',
-                                       '\n'.join([rf'wcurr["{key}"].update(value="{v}")' for key,v in val.items() if not v is None and not type(v) is tuple and not len(str(v))==0 and key!='menu']))
-                    f.write(f'loaded=True\n{updater}')
+                    # updater = re.sub(r'\"((?:\bFalse\b)|(?:\bTrue\b)\"|(?:\d+(?:\.\d+)?))\"','\g<1>',
+                    #                    '\n'.join([rf'wcurr["{key}"].update(value="{v}")' for key,v in val.items() if not v is None and not type(v) is tuple and not len(str(v))==0 and key!='menu']))
+                    # f.write(f'loaded=True\n{updater}')
+                    f.write(re.sub(r'\"((?:\bFalse\b)|(?:\bTrue\b)\"|(?:\d+(?:\.\d+)?))\"','\g<1>',
+                                       '\n'.join([rf'wcurr["{key}"].update(value="{v}")' for key,v in val.items() if not v is None and not type(v) is tuple and not len(str(v))==0 and key!='menu'])))
+                    
             except TypeError:
                 pass
-            # print(f'val = {pprint.pformat(val)}')
-            # with open(config,'w+') as f:
 
