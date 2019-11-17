@@ -19,12 +19,12 @@ import pyvisa
 import logging
 
 class SMUSetup:
-    def __init__(self,mode,lev,sens):
+    def __init__(self,src,lev,sens):
         self.rm = pyvisa.ResourceManager()
         self.smu = None
         self.res = None
         self.__verify()
-        self.setup(mode,lev,sens)
+        self.setup(src,lev,sens)
 
     # Verify that the instrument is connected and communication is able to take place
     def __verify(self):
@@ -45,16 +45,19 @@ class SMUSetup:
             logging.error(err)
             exit(-1)
 
-    def setup(self,mode,lev,sens):
+    # mode = source mode, lev = how much to source, sens = sens mode
+    def setup(self,src,lev,sens):
         try:
             # First reset and clear status
             self.smu.write('*rst;outp off;*cls')
             # Set the source mode
-            self.smu.write('sour:func:mode {}'.format(mode))
+            self.smu.write(f'sour:func:mode {src}')
             # Set the level of the source
-            self.smu.write('sour:{}:lev {}'.format(mode,lev))
+            self.smu.write(f'sour:{src}:lev {lev}')
             # Set the sensing mode
-            self.smu.write('sens:func "{}"'.format(sens))
+            self.smu.write(f'sens:func "{sens}"')
+            # Only get the value we want
+            self.smu.write(f'form:elem {sens}')
 
         except pyvisa.errors.VisaIOError as err:
             logging.error(err)

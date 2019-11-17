@@ -21,33 +21,32 @@ import argparse
 from resources import SMUSetup
 
 class ContactTest:
-    def __init__(self,pins=[None*16]):
-        self.pins = pins
+    def get_valid_pins(pin_vals):
+        return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin != 'VCC' and pin != 'GND']
+    
+    def __init__(self,pins):
         self.rm = pyvisa.ResourceManager()
         self.list_resources = self.rm.list_resources()
-        logging.info('All resources:\n',pprint.pformat(self.list_resources))
+        # logging.info('All resources:\n',pprint.pformat(self.list_resources))
         self.msg = 'Please ground all input pins of the DUT.'
-        self.instr = SMUSetup('curr','250e-6','volt')
+        self.instr = SMUSetup(src='curr',lev='250e-6',sens='volt')
         self.smu = self.instr.smu
-        self.curr_pin = pins[0]
         # List of measurements for each pin
-        self.meas = {}
+        self.meas = dict.fromkeys(pins)
 
     # Test on single pin
-    def execute_test_pin(self,pin=None):
+    def execute_test_pin(self,pin,last=False):
         # Turn the output on
         self.smu.write('outp on')
+        # Only get the value we want
+        self.smu.write(f'form:elem volt')
         # Read the voltage
         res = self.smu.query('read?')
-        self.smu.write('*rst;outp off;*cls')
-        self.rm.close()
-        if pin is None:
-            self.meas['pin {}'.format(curr_pin)] = res
-            curr_pin = self.pins[self.pins.index(curr_pin)+1]
-        else:
-            self.meas['pin {}'.format(pin)] = res
-            curr_pin = pin
+        if last:
+            self.smu.write('*rst;outp off;*cls')
+            self.rm.close()
             
+        self.meas[pin] = float(res)
         return res
 
     # Test the whole DUT
