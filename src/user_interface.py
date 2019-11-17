@@ -22,7 +22,7 @@ from statistics import mean
 from contact_test import ContactTest
 from power_consumption_test import PowerConsumptionTest
 from output_short_current_test import OutputShortCurrentTest
-from voltage_threshold_test import VoltageThresholdTest
+from voltage_threshold_test import VoltageThresholdTestLow, VoltageThresholdTestHigh
 # from resources import RelayBoard
 LIST_TESTS = ['Contact Test','Power Consumption Test','Voltage Threshold Test','Output Short Current Test','Output Drive Current Test','Functional Test']
 class TotalDataset:
@@ -50,7 +50,7 @@ class TotalDataset:
             elif test == 'functional test':
                 # chip.functional_test()
                 pass
-            elif test == 'voltage threshold test':
+            elif test.startswith('voltage threshold test'):
                 chip.voltage_threshold_test()
             else:
                 continue
@@ -76,7 +76,7 @@ class ICDataset:
         self.refs['contact test'] = con
 
         # Get list of input pins
-        input_pins = (i+1 for i,pin in enumerate(self.pins) if pin == 'IN')
+        input_pins = [i+1 for i,pin in enumerate(self.pins) if pin == 'IN']
         # Tell user which pins to set to GND
         try:
             input_pins[-1] = f'and {input_pins[-1]}'
@@ -89,7 +89,7 @@ class ICDataset:
         # Go through list of pins
         for i,pin in enumerate(valid_pins):
             # self.relay_board.set_relay(pin)
-            msg = f'Please move the SMU probe to pin {pin}.'
+            msg = f'Please move the SMU probe to {pin}.'
             gui.Popup(msg,title='Contact Test')
             con.execute_test_pin(pin,i==len(valid_pins)-1)
 
@@ -107,7 +107,7 @@ class ICDataset:
             gui.Popup(msg,title='Power Consumption Test')
             # output_pins = [output_pins]
 
-        pctest = PowerConsumptionTest(self.vcc,self.pin_vals)
+        pctest = PowerConsumptionTest(self.vcc,self.pins)
         self.refs['power consumption test'] = pctest
 
         msg = 'Please move the SMU probe to the VCC pin {self.pins.index("VCC")+1}.'
@@ -130,13 +130,13 @@ class ICDataset:
         logging.debug('Beginning the Voltage Threshold Test')
         # Get list of input pins
         input_pins = [f'pin {i+1}' for i,pin in enumerate(self.pins) if pin == 'IN']
-        vtl = VoltageThresholdLow(self.vcc,self.pins)
+        vtl = VoltageThresholdTestLow(self.vcc,self.pins)
 
         for i,pin in enumerate(input_pins):
             gui.Popup(f'Move the probe of the SMU to input {pin} and set up the inputs so that the output pin should result in a logic level LOW while {pin} is also set to logic level LOW. Move the probe of the DMM to the output pin.',title='Voltage Threshold Test (Low)')
             vtl.execute_test(pin,i==len(input_pins)-1)
 
-        vth = VoltageThresholdHigh(self.vcc,self.pins)
+        vth = VoltageThresholdTestHigh(self.vcc,self.pins)
         for i,pin in enumerate(input_pins):
             gui.Popup(f'Move the probe of the SMU to input {pin} and set up the inputs so that the output pin should result in a logic level HIGH while {pin} is also set to logic level HIGH. Move the probe of the DMM to the output pin.',title='Voltage Threshold Test (High)')
             vth.execute_test(pin,i==len(input_pins)-1)
@@ -154,13 +154,13 @@ def start_tests(fname,pin_vals,tests,vcc):
     # Make the list of pins
     list_pins = ['pin {}'.format(i) for i in range(1,len(pin_vals)+1)]
     # Start by making the overarching dataset class
-    chip_set = TotalDataset(tests)
-    chip_count = 1
 
     if 'voltage threshold test' in tests:
        tests[tests.index('voltage threshold test')] = 'voltage threshold test low'
        tests.append('voltage threshold test high')
     print(tests)
+    chip_set = TotalDataset(tests)
+    chip_count = 1
     while True:
         chip = ICDataset(chip_count,pin_vals,vcc)
         chip_set.add_chip(chip)
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     wcurr = winit
     graph = wcurr['chip']
     while True:
-        event,val = wcurr.Read(timeout=10)
+        event,val = wcurr.Read(timeout=100)
         graph.Erase()
         rows = int(val['num_pins']/2)
         w,h=w_max,(rows/8)*h_max
@@ -302,7 +302,9 @@ if __name__ == '__main__':
             try:
                 with open(config,'r') as f:
                     exec(f.read())
-            except FileNotFoundError or TypeError:
+            except FileNotFoundError:
+                pass
+            except TypeError:
                 pass
 
         elif event == 'Save':

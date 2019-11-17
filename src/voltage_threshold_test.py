@@ -63,6 +63,7 @@ class VoltageThresholdTest:
 
 
 class VoltageThresholdTestHigh:
+    get_valid_pins = VoltageThresholdTest.get_valid_pins
     def __init__(self,vcc,pin_vals):
         vt = VoltageThresholdTest(vcc,pin_vals,True)
         self.rm = vt.rm
@@ -102,6 +103,7 @@ class VoltageThresholdTestHigh:
         return res
 
 class VoltageThresholdTestLow:
+    get_valid_pins = VoltageThresholdTest.get_valid_pins
     def __init__(self,vcc,pin_vals):
         vt = VoltageThresholdTest(vcc,pin_vals,False)
         self.rm = vt.rm
