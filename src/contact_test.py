@@ -42,8 +42,8 @@ class ContactTest:
         self.smu.write(f'form:elem volt')
         # Read the voltage
         res = self.smu.query('read?')
-        self.smu.write('*rst;outp off;*cls')
         if last:
+            self.smu.write('*rst;outp off;*cls')
             self.rm.close()
             
         self.meas[pin] = float(res)

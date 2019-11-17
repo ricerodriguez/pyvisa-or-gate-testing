@@ -19,24 +19,33 @@ import argparse
 from resources import SMUSetup
 
 class PowerConsumptionTest:
-    def __init__(self,vcc):
+    def get_valid_pins(pin_vals):
+        return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin == 'VCC']
+    
+    def __init__(self,vcc,pins):
         self.rm = pyvisa.ResourceManager()
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
-        self.instr = SMUSetup('volt',vcc,'curr')
+        self.instr = SMUSetup(src='volt',lev=vcc,sens='curr')
         self.smu = self.instr.smu
-        self.res = None
-
+        # List of measurements for each pin
+        self.meas = dict.fromkeys(pins)
+        
     # Actually perform the test
-    def execute_test(self,vcc=None):
+    def execute_test(self,pins,vcc=None,last=False):
         if not vcc is None:
             self.instr.setup('volt',vcc,'curr')
         # Turn the output on
         self.smu.write('outp on')
-        # Read the voltage
-        self.res = self.smu.query('read?')
-        self.smu.write('*rst;outp off;*cls')
-        return self.res
-        self.rm.close()
+        # Only get the value we want
+        self.smu.write(f'form:elem curr')
+        # Read the current
+        res = self.smu.query('read?')
+        if last:
+            self.smu.write('*rst;outp off;*cls')
+            self.rm.close()
+
+        self.meas[pin] = float(res)
+        return res
         
 
 if __name__ == '__main__':
