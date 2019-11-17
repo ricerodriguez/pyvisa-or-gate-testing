@@ -45,7 +45,7 @@ class TotalDataset:
                 chip.power_consumption_test()
             elif test == 'output short current test':
                 chip.output_short_current_test()
-            elif test == 'output drive current test':
+            elif test.startswith('output drive current test'):
                 chip.output_drive_current_test()
             elif test == 'functional test':
                 # chip.functional_test()
@@ -124,6 +124,18 @@ class ICDataset:
             gui.Popup(f'Please move the probe from the SMU to {pin}.',title='Output Short Current Test')
             osct.execute_test(pin,i==len(valid_pins)-1)
 
+    def output_drive_current_test(self):
+        logging.debug('Beginning the Output Drive Current Test')
+        valid_pins = OutputDriveCurrentTest(self.pins)
+        odctest = OutputDriveCurrentTest(self.vcc,self.pins)
+        for i,pin in enumerate(valid_pins):
+            gui.Popup(f'Set the inputs of the DUT so that the output {pin} under test should be in logic-level LOW.',title='Output Drive Current Test (Low)')
+            self.refs['output drive current test low']=odctest.execute_test(self.pins,i==len(valid_pins)-1,'LOW')
+            odctest.execute_test(self.pins,i==len(valid_pins)-1,'LOW')
+            gui.Popup(f'Set the inputs of the DUT so that the output {pin} under test should be in logic-level HIGH.',title='Output Drive Current Test (High)')
+            self.refs['output drive current test high']=odctest.execute_test(self.pins,i==len(valid_pins)-1,'HIGH')
+            
+
 
     # There's definitely way better ways to do this but I don't have time
     def voltage_threshold_test(self):
@@ -158,6 +170,11 @@ def start_tests(fname,pin_vals,tests,vcc):
     if 'voltage threshold test' in tests:
        tests[tests.index('voltage threshold test')] = 'voltage threshold test low'
        tests.append('voltage threshold test high')
+
+    if 'output drive current test' in tests:
+       tests[tests.index('output drive current test')] = 'output drive current test low'
+       tests.append('output drive current test high')
+
     print(tests)
     chip_set = TotalDataset(tests)
     chip_count = 1

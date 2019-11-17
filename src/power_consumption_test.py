@@ -37,7 +37,7 @@ class PowerConsumptionTest:
         # Turn the output on
         self.smu.write('outp on')
         # Only get the value we want
-        self.smu.write(f'form:elem curr')
+        self.smu.write('form:elem curr')
         # Read the current
         res = self.smu.query('read?')
         if last:
