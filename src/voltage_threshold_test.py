@@ -40,7 +40,7 @@ import argparse as arg
 from resources import SMUSetup, RelayBoard
 from time import sleep
 
-class VoltageThreshold:
+class VoltageThresholdTest:
     def __init__(self, relay, pins):
         self.rm = pyvisa.ResourceManager()
         self.msg = 'Please make sure you connected one input pin and one output pin'
@@ -52,6 +52,9 @@ class VoltageThreshold:
         self.pins = pins
         self.meas = {}
 
+    def get_valid_pins(pin_vals):
+        return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin != 'VCC' and pin != 'GND' and pin != 'IN']
+
     def execute_test(self, Vcc, pinStart):
 
         # 9225 for a
@@ -59,57 +62,64 @@ class VoltageThreshold:
         # self.relay.multirelay(pinPos)
         thresh = 0
 
-        for direction in range(0,1):
-            # for currPin in self.pins:
+        for direction in range(0,2):
+            for currPin in self.pins:
+
                 #for each step up or down
                 #stepping down
-            logging.warning('on pin number: {}'.format(currPin))
-            if pinStart:
-                start = Vcc * 10
-                finish = -1
-                step = -1
-                # readOut = 0
-                compare = 20 # Vih
-                #stepping up
-                logging.warning('starting at vcc, going down by .1')
-            else:
-                start = 0
-                finish = Vcc * 10 + 1
-                step = 1
-                compare = 8 # Vil
-                logging.warning('starting at 0, going down up .1')
-            for volts in range(start, finish, step):
-                logging.warning('current volage level:{}'.format(volts))
-                #write the new voltage to the input pin we're working with
-                self.instr.setup('volt', volts/10, 'curr')
-                self.smu.write('outp on')
-                #wait a bit before reading the result at the output
-                time.sleep(.025)
-                    #make sure we read it as a binary value
-                read = int(self.relay.read_inputs(), base = 2)
-                print(volts,read)
-                    #we may need to mask later? idk rn but if we're no longer
-                    #seeing the same output, that means we hit a threshold.
-                if read != pinStart and thresh == 0:
-                    thresh = volts
-                    self.rm.close() #make sure you're closing this shit!
-                        #if we are stepping down and our threshold passed
-                    if pinStart and volts <= compare:
-                        self.outcome = True #then the test was successful, we passed
-                        # self.rm.close()
-                        self.meas['pin {}'.format(currPin)][1] = thresh   #return the threshold for this OR gate
-                        #if we are stepping up and our threshold passed
-                    elif not pinStart and volts > compare:
-                        self.outcome = True #then the test was successful, we passed
-                        # self.rm.close()
-                        self.meas['pin {}'.format(currPin)][0] = thresh  #return the threshold for this OR gate
-                    else: #otherwise the test failed, we failed :\
-                        self.outcome = False
-                        # self.rm.close()
-                        self.meas['pin {}'.foramt(currPin)] = thresh, thresh
+                logging.warning('on pin number: {}'.format(currPin))
+                if pinStart:
+                    start = Vcc * 10
+                    finish = -1
+                    step = -1
+                    # readOut = 0
+                    compare = 20 # Vih
+                    #stepping up
+                    logging.warning('starting at vcc, going down by .1')
                 else:
-                    self.smu.write('*rst;outp off;*cls;')
-            pinStart = not pinStart #now do the 
+                    start = 0
+                    finish = Vcc * 10 + 1
+                    step = 1
+                    compare = 8 # Vil
+                    logging.warning('starting at 0, going down up .1')
+                for volts in range(start, finish, step):
+                    logging.warning('current volage level:{}'.format(volts))
+                    #write the new voltage to the input pin we're working with
+                    self.instr.setup('volt', volts/10, 'curr')
+                    sleep(.025)
+                    self.smu.write('outp on')
+# #wait a bit before reading the result at the output
+# sleep(.025)
+#     #make sure we read it as a binary value
+# self.relay.reset_input_buffer()
+# sleep(.05)
+# self.relay.write('a'.encode('utf-8'))
+# sleep(.05)
+# read =  we're not using the relay stuff anymore 
+
+                    print(volts,read)
+                        #we may need to mask later? idk rn but if we're no longer
+                        #seeing the same output, that means we hit a threshold.
+                    if read < compare and thresh == 0:
+                        thresh = volts
+                        self.rm.close() #make sure you're closing this shit!
+                            #if we are stepping down and our threshold passed
+                        if pinStart and volts <= compare:
+                            self.outcome = True #then the test was successful, we passed
+                            # self.rm.close()
+                            self.meas['pin {}'.format(currPin)][1] = thresh   #return the threshold for this OR gate
+                            #if we are stepping up and our threshold passed
+                        elif not pinStart and volts > compare:
+                            self.outcome = True #then the test was successful, we passed
+                            # self.rm.close()
+                            self.meas['pin {}'.format(currPin)][0] = thresh  #return the threshold for this OR gate
+                        else: #otherwise the test failed, we failed :\
+                            self.outcome = False
+                            # self.rm.close()
+                            self.meas['pin {}'.foramt(currPin)] = thresh, thresh
+                    else:
+                        self.smu.write('*rst;outp off;*cls;')
+            pinStart = not pinStart #now do the
 
 
         self.rm.close()

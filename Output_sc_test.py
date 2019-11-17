@@ -9,7 +9,10 @@ Procedure:
     logic high
     2. Force the voltage level on the output pin under test to be 0 VDC
     3. Measure the current draw Ioh from the output pin under test
-
+Ideas:
+    1: short the output pin to ground
+    2: start with A,B = 0  then set the voltage to vcc for one of the inputs.
+    3: measure the current at the output pin.
 Outcomes:
     Passing Condition: Ioh >= .04 A
     Failing Condition: Ioh < .04 A
@@ -34,7 +37,7 @@ import logging
 import argparse
 from resource import SMUSetup
 
-class OutputScTest:
+class OutputShortTest:
     def __init__(self,vcc,pins = 0):
         self.rm = pyvisa.ResourceManager()
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the input pin.'
@@ -42,6 +45,9 @@ class OutputScTest:
         self.smu = self.instr.smu
         self.meas = {}
         # self.currPin = pins[0]
+
+    def get_valid_pins(pin_vals):
+        return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin != 'VCC' and pin != 'GND' and pin != 'IN']
 
         #basically the same as the power consumption test
     def execute_test(self,vcc, pin = 0):
