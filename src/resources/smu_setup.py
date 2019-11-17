@@ -39,10 +39,12 @@ class SMUSetup:
 
         except AttributeError as err:
             logging.error(err)
+            logging.error('Please connect to the SMU.')
             exit(-1)
 
         except pyvisa.errors.VisaIOError as err:
             logging.error(err)
+            logging.error('Please connect to the SMU.')
             exit(-1)
 
     # mode = source mode, lev = how much to source, sens = sens mode
@@ -60,4 +62,5 @@ class SMUSetup:
             self.smu.write(f'form:elem {sens}')
 
         except pyvisa.errors.VisaIOError as err:
+            logging.error('Please connect to the SMU.')
             logging.error(err)

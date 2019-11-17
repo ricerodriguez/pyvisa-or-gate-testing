@@ -24,7 +24,7 @@ class ContactTest:
     def get_valid_pins(pin_vals):
         return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin != 'VCC' and pin != 'GND']
     
-    def __init__(self,pins):
+    def __init__(self,pin_vals):
         self.rm = pyvisa.ResourceManager()
         self.list_resources = self.rm.list_resources()
         # logging.info('All resources:\n',pprint.pformat(self.list_resources))
@@ -32,7 +32,8 @@ class ContactTest:
         self.instr = SMUSetup(src='curr',lev='250e-6',sens='volt')
         self.smu = self.instr.smu
         # List of measurements for each pin
-        self.meas = dict.fromkeys(pins)
+        self.meas = dict.fromkeys(ContactTest.get_valid_pins(pin_vals))
+        self.outcomes = dict.fromkeys(ContactTest.get_valid_pins(pin_vals))
 
     # Test on single pin
     def execute_test_pin(self,pin,last=False):
@@ -45,8 +46,10 @@ class ContactTest:
         if last:
             self.smu.write('*rst;outp off;*cls')
             self.rm.close()
-            
-        self.meas[pin] = float(res)
+
+        fres = float(res)
+        self.meas[pin] = fres
+        self.outcomes[pin] = fres > -1.5 and fres < -0.75
         return res
 
     # Test the whole DUT

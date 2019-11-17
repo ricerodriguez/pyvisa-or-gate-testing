@@ -21,6 +21,8 @@ import PySimpleGUI as gui
 from statistics import mean
 from contact_test import ContactTest
 from power_consumption_test import PowerConsumptionTest
+from output_short_current_test import OutputShortCurrentTest
+from voltage_threshold_test import VoltageThresholdTest
 # from resources import RelayBoard
 LIST_TESTS = ['Contact Test','Power Consumption Test','Voltage Threshold Test','Output Short Current Test','Output Drive Current Test','Functional Test']
 class TotalDataset:
@@ -42,11 +44,12 @@ class TotalDataset:
             elif test == 'power consumption test':
                 chip.power_consumption_test()
             elif test == 'output short current test':
-                chip.output_sc_test()
+                chip.output_short_current_test()
             elif test == 'output drive current test':
-                chip.output_dc_test()
+                chip.output_drive_current_test()
             elif test == 'functional test':
-                chip.functional_test()
+                # chip.functional_test()
+                pass
             elif test == 'voltage threshold test':
                 chip.voltage_threshold_test()
             else:
@@ -67,7 +70,8 @@ class ICDataset:
 
     def contact_test(self):
         logging.debug('Beginning the Contact Test')
-        con = ContactTest(valid_pins)
+        valid_pins = ContactTest.get_valid_pins(self.pins)
+        con = ContactTest(self.pins)
         # Add the object reference to the dict so we have access to it
         self.refs['contact test'] = con
 
@@ -103,7 +107,7 @@ class ICDataset:
             gui.Popup(msg,title='Power Consumption Test')
             # output_pins = [output_pins]
 
-        pctest = PowerConsumptionTest(self.vcc)
+        pctest = PowerConsumptionTest(self.vcc,self.pin_vals)
         self.refs['power consumption test'] = pctest
 
         msg = 'Please move the SMU probe to the VCC pin {self.pins.index("VCC")+1}.'
@@ -111,9 +115,32 @@ class ICDataset:
         # There's only one VCC pin
         pctest.execute_test(f'pin {self.pins.index("VCC")+1}',last=True)
 
-    # def output_short_current_test(self):
-        
+    def output_short_current_test(self):
+        logging.debug('Beginning the Output Short Current Test')
+        gui.Popup('Set the input pins such that the DUT should output a logic HIGH.',title='Output Short Current Test')
+        osct = OutputShortCurrentTest(self.pins)
+        valid_pins = OutputShortCurrentTest.get_valid_pins(self.pins)
+        for i,pin in enumerate(valid_pins):
+            gui.Popup(f'Please move the probe from the SMU to {pin}.',title='Output Short Current Test')
+            osct.execute_test(pin,i==len(valid_pins)-1)
 
+
+    # There's definitely way better ways to do this but I don't have time
+    def voltage_threshold_test(self):
+        logging.debug('Beginning the Voltage Threshold Test')
+        # Get list of input pins
+        input_pins = [f'pin {i+1}' for i,pin in enumerate(self.pins) if pin == 'IN']
+        vtl = VoltageThresholdLow(self.vcc,self.pins)
+
+        for i,pin in enumerate(input_pins):
+            gui.Popup(f'Move the probe of the SMU to input {pin} and set up the inputs so that the output pin should result in a logic level LOW while {pin} is also set to logic level LOW. Move the probe of the DMM to the output pin.',title='Voltage Threshold Test (Low)')
+            vtl.execute_test(pin,i==len(input_pins)-1)
+
+        vth = VoltageThresholdHigh(self.vcc,self.pins)
+        for i,pin in enumerate(input_pins):
+            gui.Popup(f'Move the probe of the SMU to input {pin} and set up the inputs so that the output pin should result in a logic level HIGH while {pin} is also set to logic level HIGH. Move the probe of the DMM to the output pin.',title='Voltage Threshold Test (High)')
+            vth.execute_test(pin,i==len(input_pins)-1)
+        
 
 def start_tests(fname,pin_vals,tests,vcc):
     tab_layout = [[gui.Image('resources/placeholder.png')]]
@@ -130,6 +157,10 @@ def start_tests(fname,pin_vals,tests,vcc):
     chip_set = TotalDataset(tests)
     chip_count = 1
 
+    if 'voltage threshold test' in tests:
+       tests[tests.index('voltage threshold test')] = 'voltage threshold test low'
+       tests.append('voltage threshold test high')
+    print(tests)
     while True:
         chip = ICDataset(chip_count,pin_vals,vcc)
         chip_set.add_chip(chip)

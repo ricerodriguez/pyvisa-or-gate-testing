@@ -22,16 +22,16 @@ class PowerConsumptionTest:
     def get_valid_pins(pin_vals):
         return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin == 'VCC']
     
-    def __init__(self,vcc):
+    def __init__(self,vcc,pin_vals):
         self.rm = pyvisa.ResourceManager()
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the VCC pin.'
         self.instr = SMUSetup(src='volt',lev=vcc,sens='curr')
         self.smu = self.instr.smu
         # List of measurements for each pin
-        self.meas = dict.fromkeys(pins)
+        self.meas = dict.fromkeys(PowerConsumptionTest.get_valid_pins(pin_vals))
         
     # Actually perform the test
-    def execute_test(self,pins,vcc=None,last=False):
+    def execute_test(self,pin,vcc=None,last=False):
         if not vcc is None:
             self.instr.setup('volt',vcc,'curr')
         # Turn the output on
