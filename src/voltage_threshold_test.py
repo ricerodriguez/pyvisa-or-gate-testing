@@ -48,12 +48,13 @@ class VoltageThresholdTest:
     def get_valid_pins(pin_vals):
         return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin == 'IN']
 
-    def __init__(self, rm, vcc, vih, voh, vol, pin_vals):
+    def __init__(self, rm, vcc, vih, vil, voh, vol, pin_vals):
         self.rm = rm
         self.msg = 'Please make sure you connected one input pin and one output pin'
 
         self.vcc = vcc
         self.vih = vih
+        self.vil = vil
         self.voh = voh
         self.vol = vol
         
@@ -66,8 +67,8 @@ class VoltageThresholdTest:
 
         self.outcomes = dict.fromkeys(VoltageThresholdTest.get_valid_pins(pin_vals))
         self.meas = dict.fromkeys(VoltageThresholdTest.get_valid_pins(pin_vals))
-        self.hi = VoltageThresholdTestHigh(self.meas)
-        self.lo = VoltageThresholdTestLow(self.meas)
+        self.hi = VoltageThresholdTestHigh(self.meas,self.outcomes)
+        self.lo = VoltageThresholdTestLow(self.meas,self.outcomes)
 
 
     def execute_test(self,pin,mode,last=False):
@@ -87,21 +88,28 @@ class VoltageThresholdTest:
 
         while out_val > self.vol if mode.upper() == 'HIGH' else out_val < self.voh:
             res = res - 0.1 if mode.upper() == 'HIGH' else res + 0.1
+            if res > self.vcc or res < 0:
+                out_val = float(self.dmm.query('?'))
+                break
             # Set the level of the source
             self.smu.write(f'sour:volt:lev {res}')
             out_val = float(self.dmm.query('?'))
 
+        self.outcomes[pin] = (res <= self.vih) if mode.upper() == 'HIGH' else (res >= self.vil)
+        self.meas[pin] = res
+
         if mode.upper() == 'HIGH':
             self.hi.meas = self.meas
+            self.hi.outcomes = self.outcomes
             return self.hi
         elif mode.upper() == 'LOW':
             self.lo.meas = self.meas
+            self.lo.outcomes = self.outcomes
             return self.lo
         else:
             return self
 
-        self.outcomes[pin] = (res <= self.vih) if mode.upper() == 'HIGH' else (res >= self.vil)
-        self.meas[pin] = res
+        self.smu.write('*rst;outp off;*cls')
         return res
 
 class VoltageThresholdTestHigh:
@@ -128,14 +136,4 @@ if __name__ == '__main__':
     else:
         logging.basicConfig(level=logging.WARNING)
 
-    # Vcc = int(input('What is the Vcc of your device? \n'))
-    # pinStart = bool(input('Are starting with an output of 1 or 0? \n'))
 
-
-
-    # vt = VoltageThreshold(relay,range(1,14))
-    # vt.execute_test(Vcc,pinStart)
-
-    # vt = VoltageThresholdTest(['IN','OUT','IN','OUT','VCC','IN','OUT','IN','OUT','GND']).VoltageThresholdHigh(['IN','OUT','IN','OUT','VCC','IN','OUT','IN','OUT','GND'])
-
-    vth = VoltageThresholdTestHigh(5,['IN','OUT','IN','OUT','VCC','IN','OUT','IN','OUT','GND'])

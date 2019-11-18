@@ -19,7 +19,7 @@ import re
 import pyvisa
 import PySimpleGUI as gui
 # from . import *
-from statistics import mean
+from statistics import mean, stdev
 from contact_test import ContactTest
 from power_consumption_test import PowerConsumptionTest
 from output_short_current_test import OutputShortCurrentTest
@@ -73,11 +73,11 @@ class ICDataset:
         # References to the subclasses
         self.refs = {}
         # VCC level
-        self.vcc = voltages[0]
-        self.vih = voltages[1]
-        self.vil = voltages[2]
-        self.voh = voltages[3]
-        self.vol = voltages[4]
+        self.vcc = float(voltages[0])
+        self.vih = float(voltages[1])
+        self.vil = float(voltages[2])
+        self.voh = float(voltages[3])
+        self.vol = float(voltages[4])
         self.voltages=voltages
 
     def contact_test(self):
@@ -152,7 +152,7 @@ class ICDataset:
         print(self.pins)
         # Get list of input pins
         input_pins = [f'pin {i+1}' for i,pin in enumerate(self.pins) if pin == 'IN']
-        vt = VoltageThresholdTest(self.rm,self.vcc,self.vih,self.voh,self.vol,self.pins)
+        vt = VoltageThresholdTest(self.rm,self.vcc,self.vih,self.vil,self.voh,self.vol,self.pins)
 
         for i,pin in enumerate(input_pins):
             gui.Popup(f'Move the probe of the SMU to input {pin} and set up the inputs so that the output pin should result in a logic level LOW while {pin} is also set to logic level LOW. Move the probe of the DMM to the output pin.',title='Voltage Threshold Test (Low)')
@@ -163,10 +163,12 @@ class ICDataset:
 
 def start_tests(fname,pin_vals,tests,voltages):
     tab_layout = [[gui.Image('resources/placeholder.png')]]
-    hist_layout = [gui.TabGroup([[gui.Tab(title=test,
+    hist_layout = [gui.TabGroup([[gui.Tab(title=test.title(),
                                           layout=[[gui.Image('resources/placeholder.png')]],
-                                          key='tab {}'.format(test))] for test in tests])]
-    layout2 = [[gui.T('Testing')],
+                                          key=f'tab {test}')] for test in tests])]
+    layout2 = [[gui.T(text=f'{tests[0].title()}',
+                      key='title',
+                      font=('Helvetica',20))],
                hist_layout]
     win = gui.Window('Test',layout2)
     event,val=win.read(timeout=10)
@@ -190,7 +192,7 @@ def start_tests(fname,pin_vals,tests,voltages):
         chip = ICDataset(chip_set.rm,chip_count,pin_vals,voltages)
         chip_set.add_chip(chip)
         chip_set.run_tests(chip)
-        answer=gui.PopupYesNo('Tests finished for chip #{}. Do you want to test another chip?'.format(chip_count))
+        answer=gui.PopupYesNo(f'Tests finished for chip #{chip_count}. Do you want to test another chip?')
         if answer=='Yes':
             chip_count+=1
             continue
@@ -199,11 +201,21 @@ def start_tests(fname,pin_vals,tests,voltages):
             # Get all the averages
             chip_set.rm.close()
             averages = {t:{p:mean((c.refs[t].meas[p] for c in chip_set.chips)) for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals)} for t in tests}
+            stdevs = {t:{p:stdev((c.refs[t].meas[p] for c in chip_set.chips)) for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals)} for t in tests}
+            all_outcomes = {t:{c:c.refs[t].outcomes for c in chip_set.chips} for t in tests}
+            all_meas = {t:{c.num:c.refs[t].meas for c in chip_set.chips} for t in tests}
             with open(fname,'w+') as f:
                 for t in tests:
-                    f.write(f'{t.upper():~^50}\n')
+                    # f.write(f'{t.upper():~^50}\n')
+                    f.write(f'{t.title()}\n')
                     for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals):
-                        f.write(f'{p.upper()} AVERAGE = {averages[t][p]}\n')
+                        # f.write(f'{p.upper()} AVERAGE = {averages[t][p]}\n')
+                        f.write(f'    {p.title()}:\n')
+                        f.write(f'        Average: {averages[t][p]}\n')
+                        f.write(f'        Standard Deviation: {stdevs[t][p]}\n')
+                        for c in chip_set.chips:
+                            f.write(
+                                f'        Chip #{c.num}: {all_meas[t][c.num][p]} ({all_outcomes[t][c.num][p]})\n')
             break
     return
 
