@@ -23,14 +23,14 @@ class DMMSetup:
         self.rm = pyvisa.ResourceManager()
         self.dmm = None
         self.__verify()
-        self.setup(sens)
+        self.setup()
 
     # Verify that the instrument is connected and communication is able to take place
     def __verify(self):
         # First get the SMU from the list of resources
         try:
             # 
-            self.dmm = self.rm.open_resource('DMM')
+            self.dmm = self.rm.open_resource('Fluke_8840A_MM')
             self.dmm.read_termination = '\n'
             self.dmm.write_termination = '\n'
             logging.debug('Set DMM as %(self.dmm)s')
@@ -48,23 +48,14 @@ class DMMSetup:
             exit(-1)
 
     # mode = source mode, lev = how much to source, sens = sens mode
-    def setup(self,sens):
+    def setup(self):
         try:
             # First reset and clear status
-            self.dmm.write('*rst;outp off;*cls')
+            # self.dmm.write('*rst;outp off;*cls')
             # Set function for what to measure
-            self.dmm.write(f'func "{sens}:dc"')
-            # Set to autorange
-            self.dmm.write(f'{sens}:rang:auto on')
-
-            # # Set the source mode
-            # self.smu.write(f'sour:func:mode {src}')
-            # # Set the level of the source
-            # self.smu.write(f'sour:{src}:lev {lev}')
-            # Set the sensing mode
-            # self.smu.write(f'sens:func "{sens}"')
-            # # Only get the value we want
-            # self.smu.write(f'form:elem {sens}')
+            # self.dmm.write(f'func "{sens}:dc"')
+            # Set to measure voltage 
+            self.dmm.write('* f1 r0')
 
         except pyvisa.errors.VisaIOError as err:
             logging.error('Please connect to the SMU.')

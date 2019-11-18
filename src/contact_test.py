@@ -24,19 +24,19 @@ class ContactTest:
     def get_valid_pins(pin_vals):
         return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin != 'VCC' and pin != 'GND']
     
-    def __init__(self,pin_vals):
-        self.rm = pyvisa.ResourceManager()
+    def __init__(self,rm,pin_vals):
+        self.rm = rm
         self.list_resources = self.rm.list_resources()
         # logging.info('All resources:\n',pprint.pformat(self.list_resources))
         self.msg = 'Please ground all input pins of the DUT.'
-        self.instr = SMUSetup(src='curr',lev='250e-6',sens='volt')
+        self.instr = SMUSetup(src='curr',lev='250e-6',sens='volt',rm=rm)
         self.smu = self.instr.smu
         # List of measurements for each pin
         self.meas = dict.fromkeys(ContactTest.get_valid_pins(pin_vals))
         self.outcomes = dict.fromkeys(ContactTest.get_valid_pins(pin_vals))
 
     # Test on single pin
-    def execute_test_pin(self,pin,last=False):
+    def execute_test(self,pin,last=False):
         # Turn the output on
         self.smu.write('outp on')
         # Only get the value we want
@@ -45,32 +45,11 @@ class ContactTest:
         res = self.smu.query('read?')
         if last:
             self.smu.write('*rst;outp off;*cls')
-            self.rm.close()
 
         fres = float(res)
         self.meas[pin] = fres
-        self.outcomes[pin] = fres > -1.5 and fres < -0.75
+        self.outcomes[pin] = fres > 1.5 and fres < 0.75
         return res
-
-    # Test the whole DUT
-    def execute_test(self,numpins):
-        self.res = []
-        for pin in range(1,numpins):
-            # Turn the output on
-            self.smu.write('outp on')
-            # Read the voltage
-            res = self.smu.query('read?')
-            self.res.append(res)
-            sel = input('Please move the SMU probe to the next pin (NOT VCC or GND).\nType \'c\' to continue once you have done this.')
-            if sel.lower() == 'c':
-                print('Continuing.')
-                continue
-            elif self.lower() == 'q':
-                print('Exiting.')
-                break
-            else:
-                print('Unknown command. Assuming you mistyped \'c\'')
-                continue
             
 
 if __name__ == '__main__':

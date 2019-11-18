@@ -21,8 +21,6 @@ import logging
 class SMUSetup:
     def __init__(self,src,lev,sens,rm=pyvisa.ResourceManager()):
         self.rm = rm
-        self.smu = None
-        self.res = None
         self.__verify()
         self.setup(src,lev,sens)
 

@@ -43,15 +43,21 @@ inheritance. This is done so that the user_interface module can call on the high
 and low classes without needing to instantiate the VoltageThresholdTest class
 '''
 
+        
 class VoltageThresholdTest:
     def get_valid_pins(pin_vals):
         return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin == 'IN']
 
-    def __init__(self, vcc, pin_vals,mode):
-        self.rm = pyvisa.ResourceManager()
-        self.vcc = vcc
+    def __init__(self, rm, vcc, vih, voh, vol, pin_vals):
+        self.rm = rm
         self.msg = 'Please make sure you connected one input pin and one output pin'
-        self.smu_setup = SMUSetup('volt', vcc if mode else 0 ,'volt')
+
+        self.vcc = vcc
+        self.vih = vih
+        self.voh = voh
+        self.vol = vol
+        
+        self.smu_setup = SMUSetup(src='volt',lev='0',sens='volt',rm=rm)
         self.smu = self.smu_setup.smu
         
         # Write the DMM Setup class once we figure out what the alias is
@@ -60,90 +66,56 @@ class VoltageThresholdTest:
 
         self.outcomes = dict.fromkeys(VoltageThresholdTest.get_valid_pins(pin_vals))
         self.meas = dict.fromkeys(VoltageThresholdTest.get_valid_pins(pin_vals))
+        self.hi = VoltageThresholdTestHigh(self.meas)
+        self.lo = VoltageThresholdTestLow(self.meas)
 
+
+    def execute_test(self,pin,mode,last=False):
+        if mode.upper() == 'HIGH':
+            self.smu_setup.setup(src='volt',lev=self.vcc,sens='volt')
+        else:
+            self.smu_setup.setup(src='volt',lev='0',sens='volt')
+        
+        # Set voltage to VCC, then increase in steps until output reads 2
+        self.smu.write('outp on')
+        self.smu.write(f'form:elem volt')
+        
+        # DMM read
+        out_val = float(self.dmm.query('?'))
+        sleep(0.5)
+        res = self.vcc
+
+        while out_val > self.vol if mode.upper() == 'HIGH' else out_val < self.voh:
+            res = res - 0.1 if mode.upper() == 'HIGH' else res + 0.1
+            # Set the level of the source
+            self.smu.write(f'sour:volt:lev {res}')
+            out_val = float(self.dmm.query('?'))
+
+        if mode.upper() == 'HIGH':
+            self.hi.meas = self.meas
+            return self.hi
+        elif mode.upper() == 'LOW':
+            self.lo.meas = self.meas
+            return self.lo
+        else:
+            return self
+
+        self.outcomes[pin] = (res <= self.vih) if mode.upper() == 'HIGH' else (res >= self.vil)
+        self.meas[pin] = res
+        return res
 
 class VoltageThresholdTestHigh:
     get_valid_pins = VoltageThresholdTest.get_valid_pins
-    def __init__(self,vcc,pin_vals):
-        vt = VoltageThresholdTest(vcc,pin_vals,True)
-        self.rm = vt.rm
-        self.msg = vt.msg
-        self.smu_setup = vt.smu_setup
-        self.smu = vt.smu
-
-        self.dmm_setup = vt.dmm_setup
-        self.dmm = vt.dmm
-
-        self.vcc = vt.vcc
-        self.outcomes = vt.outcomes
-        self.meas = vt.meas
-
-    def execute_test(self,pin,last=False):
-        # Set voltage to VCC, then increase in steps until output reads 2
-        self.smu.write('outp on')
-        self.smu.write(f'form:elem volt')
-        
-        # DMM read
-        out_val = float(self.dmm.query('meas:volt?'))
-        sleep(0.5)
-        res = self.vcc
-        # Not sure if this should be 2 or not
-        while out_val > 2:
-            res -= 0.1
-            # Set the level of the source
-            self.smu.write(f'sour:volt:lev {res}')
-            out_val = float(self.dmm.query('meas:volt?'))
-
-        if last:
-            self.smu.write('*rst;outp off;*cls')
-            self.dmm.write('*rst;outp off;*cls')
-            self.rm.close()
-
-        self.meas[pin] = res
-        return res
+    def __init__(self,meas,outcomes):
+        self.meas = meas
+        self.outcomes = outcomes
 
 class VoltageThresholdTestLow:
     get_valid_pins = VoltageThresholdTest.get_valid_pins
-    def __init__(self,vcc,pin_vals):
-        vt = VoltageThresholdTest(vcc,pin_vals,False)
-        self.rm = vt.rm
-        self.msg = vt.msg
-        self.smu_setup = vt.smu_setup
-        self.smu = vt.smu
-
-        self.dmm_setup = vt.dmm_setup
-        self.dmm = vt.dmm
-
-        self.vcc = vt.vcc
-        self.outcomes = vt.outcomes
-        self.meas = vt.meas
-
-    def execute_test(self,pin,last=False):
-        # Set voltage to VCC, then increase in steps until output reads 2
-        self.smu.write('outp on')
-        self.smu.write(f'form:elem volt')
+    def __init__(self,meas,outcomes):
+        self.meas = meas
+        self.outcomes = outcomes
         
-        # DMM read
-        out_val = float(self.dmm.query('meas:volt?'))
-        sleep(0.5)
-        res = self.vcc
-        # Not sure if this should be 2 or not
-        while out_val < 2:
-            res += 0.1
-            # Set the level of the source
-            self.smu.write(f'sour:volt:lev {res}')
-            out_val = float(self.dmm.query('meas:volt?'))
-
-        if last:
-            self.smu.write('*rst;outp off;*cls')
-            self.dmm.write('*rst;outp off;*cls')
-            self.rm.close()
-
-        self.meas[pin] = res
-        return res
-    
-
-
 if __name__ == '__main__':
     parser = arg.ArgumentParser(description = 'Voltage Threshold Test finds the minimum input Voltage'
                                           'required to cause the device output to switch from high to low')

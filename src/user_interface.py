@@ -16,17 +16,20 @@ import logging
 import argparse
 import pprint
 import re
+import pyvisa
 import PySimpleGUI as gui
 # from . import *
 from statistics import mean
 from contact_test import ContactTest
 from power_consumption_test import PowerConsumptionTest
 from output_short_current_test import OutputShortCurrentTest
-from voltage_threshold_test import VoltageThresholdTestLow, VoltageThresholdTestHigh
+from output_drive_current_test import OutputDriveCurrentTest, OutputDriveCurrentTestLow, OutputDriveCurrentTestHigh
+from voltage_threshold_test import VoltageThresholdTest, VoltageThresholdTestLow, VoltageThresholdTestHigh
 # from resources import RelayBoard
 LIST_TESTS = ['Contact Test','Power Consumption Test','Voltage Threshold Test','Output Short Current Test','Output Drive Current Test','Functional Test']
 class TotalDataset:
     def __init__(self,tests):
+        self.rm=pyvisa.ResourceManager()
         logging.debug('Created a new total dataset reference.')
         self.tests = tests
         self.chips = []
@@ -38,6 +41,7 @@ class TotalDataset:
 
     def run_tests(self,chip):
         # Go through all the tests
+        v_once,o_once = False,False
         for test in self.tests:
             if test == 'contact test':
                 chip.contact_test()
@@ -45,20 +49,23 @@ class TotalDataset:
                 chip.power_consumption_test()
             elif test == 'output short current test':
                 chip.output_short_current_test()
-            elif test.startswith('output drive current test'):
+            elif test.startswith('output drive current test') and not o_once:
                 chip.output_drive_current_test()
+                o_once=True
             elif test == 'functional test':
                 # chip.functional_test()
                 pass
-            elif test.startswith('voltage threshold test'):
+            elif test.startswith('voltage threshold test') and not v_once:
                 chip.voltage_threshold_test()
+                v_once=True
             else:
                 continue
 
 # Contains the dataset for the individual chip
 class ICDataset:
-    def __init__(self,num,pins,vcc):
+    def __init__(self,rm,num,pins,voltages):
         logging.debug('Created a new IC dataset object reference, number %(num)s')
+        self.rm=rm
         # List of what the pins are
         self.pins = pins
         # Which chip in the set
@@ -66,12 +73,17 @@ class ICDataset:
         # References to the subclasses
         self.refs = {}
         # VCC level
-        self.vcc = vcc
+        self.vcc = voltages[0]
+        self.vih = voltages[1]
+        self.vil = voltages[2]
+        self.voh = voltages[3]
+        self.vol = voltages[4]
+        self.voltages=voltages
 
     def contact_test(self):
         logging.debug('Beginning the Contact Test')
         valid_pins = ContactTest.get_valid_pins(self.pins)
-        con = ContactTest(self.pins)
+        con = ContactTest(self.rm,self.pins)
         # Add the object reference to the dict so we have access to it
         self.refs['contact test'] = con
 
@@ -91,7 +103,7 @@ class ICDataset:
             # self.relay_board.set_relay(pin)
             msg = f'Please move the SMU probe to {pin}.'
             gui.Popup(msg,title='Contact Test')
-            con.execute_test_pin(pin,i==len(valid_pins)-1)
+            con.execute_test(pin,i==len(valid_pins)-1)
 
     def power_consumption_test(self):
         logging.debug('Beginning the Power Consumption Test')
@@ -107,7 +119,7 @@ class ICDataset:
             gui.Popup(msg,title='Power Consumption Test')
             # output_pins = [output_pins]
 
-        pctest = PowerConsumptionTest(self.vcc,self.pins)
+        pctest = PowerConsumptionTest(self.rm,self.vcc,self.pins)
         self.refs['power consumption test'] = pctest
 
         msg = 'Please move the SMU probe to the VCC pin {self.pins.index("VCC")+1}.'
@@ -118,7 +130,8 @@ class ICDataset:
     def output_short_current_test(self):
         logging.debug('Beginning the Output Short Current Test')
         gui.Popup('Set the input pins such that the DUT should output a logic HIGH.',title='Output Short Current Test')
-        osct = OutputShortCurrentTest(self.pins)
+        osct = OutputShortCurrentTest(self.rm,self.pins)
+        self.refs['output short current test']=osct
         valid_pins = OutputShortCurrentTest.get_valid_pins(self.pins)
         for i,pin in enumerate(valid_pins):
             gui.Popup(f'Please move the probe from the SMU to {pin}.',title='Output Short Current Test')
@@ -126,35 +139,29 @@ class ICDataset:
 
     def output_drive_current_test(self):
         logging.debug('Beginning the Output Drive Current Test')
-        valid_pins = OutputDriveCurrentTest(self.pins)
-        odctest = OutputDriveCurrentTest(self.vcc,self.pins)
+        valid_pins = OutputDriveCurrentTest.get_valid_pins(self.pins)
+        odctest = OutputDriveCurrentTest(self.rm,self.vcc,self.pins)
         for i,pin in enumerate(valid_pins):
             gui.Popup(f'Set the inputs of the DUT so that the output {pin} under test should be in logic-level LOW.',title='Output Drive Current Test (Low)')
-            self.refs['output drive current test low']=odctest.execute_test(self.pins,i==len(valid_pins)-1,'LOW')
-            odctest.execute_test(self.pins,i==len(valid_pins)-1,'LOW')
+            self.refs['output drive current test low']=odctest.execute_test(pin,'LOW',False)
             gui.Popup(f'Set the inputs of the DUT so that the output {pin} under test should be in logic-level HIGH.',title='Output Drive Current Test (High)')
-            self.refs['output drive current test high']=odctest.execute_test(self.pins,i==len(valid_pins)-1,'HIGH')
-            
+            self.refs['output drive current test high']=odctest.execute_test(pin,'HIGH',i==len(valid_pins)-1)
 
-
-    # There's definitely way better ways to do this but I don't have time
     def voltage_threshold_test(self):
         logging.debug('Beginning the Voltage Threshold Test')
+        print(self.pins)
         # Get list of input pins
         input_pins = [f'pin {i+1}' for i,pin in enumerate(self.pins) if pin == 'IN']
-        vtl = VoltageThresholdTestLow(self.vcc,self.pins)
+        vt = VoltageThresholdTest(self.rm,self.vcc,self.vih,self.voh,self.vol,self.pins)
 
         for i,pin in enumerate(input_pins):
             gui.Popup(f'Move the probe of the SMU to input {pin} and set up the inputs so that the output pin should result in a logic level LOW while {pin} is also set to logic level LOW. Move the probe of the DMM to the output pin.',title='Voltage Threshold Test (Low)')
-            vtl.execute_test(pin,i==len(input_pins)-1)
-
-        vth = VoltageThresholdTestHigh(self.vcc,self.pins)
-        for i,pin in enumerate(input_pins):
+            self.refs['voltage threshold test low'] = vt.execute_test(pin,'LOW',i==len(input_pins)-1)
             gui.Popup(f'Move the probe of the SMU to input {pin} and set up the inputs so that the output pin should result in a logic level HIGH while {pin} is also set to logic level HIGH. Move the probe of the DMM to the output pin.',title='Voltage Threshold Test (High)')
-            vth.execute_test(pin,i==len(input_pins)-1)
+            self.refs['voltage threshold test high'] = vt.execute_test(pin,'HIGH',i==len(input_pins)-1)
         
 
-def start_tests(fname,pin_vals,tests,vcc):
+def start_tests(fname,pin_vals,tests,voltages):
     tab_layout = [[gui.Image('resources/placeholder.png')]]
     hist_layout = [gui.TabGroup([[gui.Tab(title=test,
                                           layout=[[gui.Image('resources/placeholder.png')]],
@@ -179,7 +186,8 @@ def start_tests(fname,pin_vals,tests,vcc):
     chip_set = TotalDataset(tests)
     chip_count = 1
     while True:
-        chip = ICDataset(chip_count,pin_vals,vcc)
+        print(pin_vals)
+        chip = ICDataset(chip_set.rm,chip_count,pin_vals,voltages)
         chip_set.add_chip(chip)
         chip_set.run_tests(chip)
         answer=gui.PopupYesNo('Tests finished for chip #{}. Do you want to test another chip?'.format(chip_count))
@@ -189,16 +197,15 @@ def start_tests(fname,pin_vals,tests,vcc):
         else:
             # Done collecting data
             # Get all the averages
+            chip_set.rm.close()
             averages = {t:{p:mean((c.refs[t].meas[p] for c in chip_set.chips)) for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals)} for t in tests}
             with open(fname,'w+') as f:
                 for t in tests:
                     f.write(f'{t.upper():~^50}\n')
                     for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals):
                         f.write(f'{p.upper()} AVERAGE = {averages[t][p]}\n')
-
             break
     return
-
 
 if __name__ == '__main__':
     started=False
@@ -218,15 +225,22 @@ if __name__ == '__main__':
 
     menu_layout = [['&File', ['&Open','&Save']]]
 
-    col_dataset = gui.Column([[gui.T('Dataset')],
-                             [gui.Input(key='fname_data_input'),gui.FileSaveAs()]])
-    col_hist = gui.Column([[gui.T('Histograms')],
-                          [gui.Input(key='fname_hist_input'),gui.FolderBrowse()]])
+    col_dataset = gui.Column([
+        [gui.T('Dataset')],
+        [gui.Input(key='fname_data_input'),
+         gui.FileSaveAs()]])
+    
+    col_hist = gui.Column([
+        [gui.T('Histograms')],
+        [gui.Input(key='fname_hist_input'),
+         gui.FolderBrowse()]])
 
     path_names = [[col_dataset,col_hist]]
 
     chip_layout = [[gui.Sizer(offset),
-                    gui.Column(list(([gui.T('PIN {}'.format(i+1),key='pin_{}'.format(i+1),visible=False),
+                    gui.Column(list(([gui.T(f'PIN {i+1}',
+                                            key=f'pin_{i+1}',
+                                            visible=False),
                                       gui.Combo(default_value='Select',
                                                 values=pin_choices,
                                                 font=('Helvetica',14),
@@ -246,10 +260,35 @@ if __name__ == '__main__':
                                                 visible=False)] for i in range(8))),
                                key='right_pins'),
                     gui.Sizer(offset)],
-                   [gui.T('VCC: '),gui.Spin(values=[i for i in range(1,12)],initial_value=5,tooltip='Set the voltage needed to send to the VCC pin to power the DUT.',key='vcc_lev')]]
+                   [gui.T('VCC: '),
+                    gui.Input(tooltip='Set the voltage needed to send to the VCC pin to power the DUT.',
+                              default_text=5,
+                              size=(5,10),
+                              key='vcc_lev'),
+                    gui.T('VIH: '),
+                    gui.Input(tooltip='Set the minimum voltage needed to set the input pins to a logic-level HIGH.',
+                              default_text=2,
+                              size=(5,10),
+                              key='vih_lev'),
+                    gui.T('VIL: '),
+                    gui.Input(tooltip='Set the maximum voltage allowed for the input pins to be set to a logic-level LOW.',
+                              default_text=0.8,
+                              size=(5,10),
+                              key='vil_lev'),
+                    gui.T('VOH: '),
+                    gui.Input(tooltip='Set the voltage level that will be output by the output pin when it is sending a logic-level HIGH.',
+                              default_text=4.5,
+                              size=(5,10),
+                              key='voh_lev'),
+                    gui.T('VOL: '),
+                    gui.Input(tooltip='Set the voltage level that will be output by the output pin when it is sending a logic-level LOW.',
+                              default_text=0,
+                              size=(5,10),
+                              key='vol_lev'),
+
+                    ]]
 
     frame_chip = gui.Frame('Device Under Test', chip_layout)
-
                   
     frame_paths = gui.Frame('Options',path_names)
     layout = [[gui.Menu(menu_layout,key='menu')],
@@ -293,6 +332,7 @@ if __name__ == '__main__':
             wcurr['right_pins'].Rows[i][1].update(visible=(i+1<=rows))
 
         if event == 'Close':
+            print(pprint.pformat(val))
             break
 
         elif event == 'Start Tests':
@@ -310,7 +350,8 @@ if __name__ == '__main__':
             elif not started:
                 wcurr.close()
                 started=True
-                start_tests(val['fname_data_input'],pin_vals,tests,val['vcc_lev'])
+                voltages = [val['vcc_lev'],val['vih_lev'],val['vil_lev'],val['voh_lev'],val['vol_lev']]
+                start_tests(val['fname_data_input'],pin_vals,tests,voltages)
             break
 
         elif event == 'Open':
@@ -329,9 +370,9 @@ if __name__ == '__main__':
             config=gui.PopupGetFile(message=msg,default_extension='.config',save_as=True)
             try:
                 with open(config,'w+') as f:
-                    # updater = re.sub(r'\"((?:\bFalse\b)|(?:\bTrue\b)\"|(?:\d+(?:\.\d+)?))\"','\g<1>',
-                    #                    '\n'.join([rf'wcurr["{key}"].update(value="{v}")' for key,v in val.items() if not v is None and not type(v) is tuple and not len(str(v))==0 and key!='menu']))
-                    # f.write(f'loaded=True\n{updater}')
+                    # Uses regular expression to find all the "True", "False",
+                    # and any number (both ints and floats) in the val dict's values
+                    # and gets rid of the quotations around it.
                     f.write(re.sub(r'\"((?:\bFalse\b)|(?:\bTrue\b)\"|(?:\d+(?:\.\d+)?))\"','\g<1>',
                                        '\n'.join([rf'wcurr["{key}"].update(value="{v}")' for key,v in val.items() if not v is None and not type(v) is tuple and not len(str(v))==0 and key!='menu'])))
                     

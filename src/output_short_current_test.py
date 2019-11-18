@@ -40,10 +40,10 @@ class OutputShortCurrentTest:
     def get_valid_pins(pin_vals):
         return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin == 'OUT']
 
-    def __init__(self,pin_vals):
-        self.rm = pyvisa.ResourceManager()
+    def __init__(self,rm,pin_vals):
+        self.rm = rm
         self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the input pin.'
-        self.instr = SMUSetup(src='volt',lev=0,sens='curr')
+        self.instr = SMUSetup(src='volt',lev=0,sens='curr',rm=rm)
         self.smu = self.instr.smu
         self.meas = dict.fromkeys(OutputShortCurrentTest.get_valid_pins(pin_vals))
         self.outcomes = dict.fromkeys(OutputShortCurrentTest.get_valid_pins(pin_vals))
@@ -59,7 +59,7 @@ class OutputShortCurrentTest:
         res = self.smu.query('read?')
         if last:
             self.smu.write('*rst;outp off;*cls')
-            self.rm.close()
+            # self.rm.close()
 
         # logging.warning('read: {}'.format(self.res))
         logging.info(f'Output Short Current Test for {pin.capitalize()}: {res}')
