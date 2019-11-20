@@ -48,7 +48,7 @@ class ContactTest:
 
         fres = float(res)
         self.meas[pin] = fres
-        self.outcomes[pin] = fres > 1.5 and fres < 0.75
+        self.outcomes[pin] = fres < 1.5 and fres > 0.75
         return res
             
 

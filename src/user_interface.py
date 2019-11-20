@@ -19,7 +19,7 @@ import re
 import pyvisa
 import PySimpleGUI as gui
 # from . import *
-from statistics import mean, stdev
+from statistics import mean, stdev, StatisticsError
 from contact_test import ContactTest
 from power_consumption_test import PowerConsumptionTest
 from output_short_current_test import OutputShortCurrentTest
@@ -162,20 +162,6 @@ class ICDataset:
         
 
 def start_tests(fname,pin_vals,tests,voltages):
-    tab_layout = [[gui.Image('resources/placeholder.png')]]
-    hist_layout = [gui.TabGroup([[gui.Tab(title=test.title(),
-                                          layout=[[gui.Image('resources/placeholder.png')]],
-                                          key=f'tab {test}')] for test in tests])]
-    layout2 = [[gui.T(text=f'{tests[0].title()}',
-                      key='title',
-                      font=('Helvetica',20))],
-               hist_layout]
-    win = gui.Window('Test',layout2)
-    event,val=win.read(timeout=10)
-    # Make the list of pins
-    list_pins = ['pin {}'.format(i) for i in range(1,len(pin_vals)+1)]
-    # Start by making the overarching dataset class
-
     if 'voltage threshold test' in tests:
        tests[tests.index('voltage threshold test')] = 'voltage threshold test low'
        tests.append('voltage threshold test high')
@@ -184,9 +170,26 @@ def start_tests(fname,pin_vals,tests,voltages):
        tests[tests.index('output drive current test')] = 'output drive current test low'
        tests.append('output drive current test high')
 
+    tab_layout = [[gui.Image('resources/placeholder.png')]]
+    hist_layout = [gui.TabGroup([[gui.Tab(title=test.title(),
+                                          layout=[[gui.Image('resources/placeholder.png')]],
+                                          key=f'tab {test}')] for test in tests])]
+
+    layout = [[gui.T(text=f'{tests[0].title()}',
+                      key='title',
+                      font=('Helvetica',20))],
+               hist_layout]
+    win = gui.Window('Test',layout)
+
+    event,val=win.read(timeout=10)
+    # Make the list of pins
+    list_pins = ['pin {}'.format(i) for i in range(1,len(pin_vals)+1)]
+    # Start by making the overarching dataset class
+
     print(tests)
     chip_set = TotalDataset(tests)
     chip_count = 1
+    only_one = False
     while True:
         print(pin_vals)
         chip = ICDataset(chip_set.rm,chip_count,pin_vals,voltages)
@@ -201,8 +204,12 @@ def start_tests(fname,pin_vals,tests,voltages):
             # Get all the averages
             chip_set.rm.close()
             averages = {t:{p:mean((c.refs[t].meas[p] for c in chip_set.chips)) for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals)} for t in tests}
-            stdevs = {t:{p:stdev((c.refs[t].meas[p] for c in chip_set.chips)) for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals)} for t in tests}
-            all_outcomes = {t:{c:c.refs[t].outcomes for c in chip_set.chips} for t in tests}
+            try:
+                stdevs = {t:{p:stdev((c.refs[t].meas[p] for c in chip_set.chips)) for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals)} for t in tests}
+            except StatisticsError:
+                only_one = True
+                pass
+            all_outcomes = {t:{c.num:c.refs[t].outcomes for c in chip_set.chips} for t in tests}
             all_meas = {t:{c.num:c.refs[t].meas for c in chip_set.chips} for t in tests}
             with open(fname,'w+') as f:
                 for t in tests:
@@ -212,7 +219,9 @@ def start_tests(fname,pin_vals,tests,voltages):
                         # f.write(f'{p.upper()} AVERAGE = {averages[t][p]}\n')
                         f.write(f'    {p.title()}:\n')
                         f.write(f'        Average: {averages[t][p]}\n')
-                        f.write(f'        Standard Deviation: {stdevs[t][p]}\n')
+                        if not only_one:
+                            f.write(f'        Standard Deviation: {stdevs[t][p]}\n')
+                        
                         for c in chip_set.chips:
                             f.write(
                                 f'        Chip #{c.num}: {all_meas[t][c.num][p]} ({all_outcomes[t][c.num][p]})\n')
@@ -323,7 +332,7 @@ if __name__ == '__main__':
     wcurr = winit
     graph = wcurr['chip']
     while True:
-        event,val = wcurr.Read(timeout=100)
+        event,val = wcurr.Read(timeout=10)
         graph.Erase()
         rows = int(val['num_pins']/2)
         w,h=w_max,(rows/8)*h_max
