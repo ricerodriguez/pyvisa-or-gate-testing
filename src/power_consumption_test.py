@@ -46,7 +46,7 @@ class PowerConsumptionTest:
             self.smu.write('*rst;outp off;*cls')
         #     self.rm.close()
 
-        fres = float(f'{res:.3f}')
+        fres = float(f'{float(res):.3f}')
         self.meas[pin] = fres
         self.outcomes[pin] = fres <= 0.07
         return res

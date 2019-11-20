@@ -63,7 +63,7 @@ class OutputShortCurrentTest:
 
         # logging.warning('read: {}'.format(self.res))
         logging.info(f'Output Short Current Test for {pin.capitalize()}: {res}')
-        fres = float(f'{res:.3f}')
+        fres = float(f'{float(res):.3f}')
         self.meas[pin] = fres
         self.outcomes[pin] = fres >= 0.04
 

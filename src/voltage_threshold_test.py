@@ -95,7 +95,7 @@ class VoltageThresholdTest:
             self.smu.write(f'sour:volt:lev {res}')
             out_val = float(self.dmm.query('?'))
 
-        fres = float(f'{res:.3f}')
+        fres = float(f'{float(res):.3f}')
         self.outcomes[pin] = (fres <= self.vih) if mode.upper() == 'HIGH' else (fres >= self.vil)
         self.meas[pin] = fres
 

@@ -46,7 +46,7 @@ class ContactTest:
         if last:
             self.smu.write('*rst;outp off;*cls')
 
-        fres = float(f'{res:.3f}')
+        fres = float(f'{float(res):.3f}')
         self.meas[pin] = fres
         self.outcomes[pin] = fres < 1.5 and fres > 0.75
         return fres
