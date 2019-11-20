@@ -29,6 +29,8 @@ class PowerConsumptionTest:
         self.smu = self.instr.smu
         # List of measurements for each pin
         self.meas = dict.fromkeys(PowerConsumptionTest.get_valid_pins(pin_vals))
+        self.outcomes = dict.fromkeys(PowerConsumptionTest.get_valid_pins(pin_vals))
+
         
     # Actually perform the test
     def execute_test(self,pin,vcc=None,last=False):
@@ -44,7 +46,9 @@ class PowerConsumptionTest:
             self.smu.write('*rst;outp off;*cls')
         #     self.rm.close()
 
-        self.meas[pin] = float(res)
+        fres = float(f'{res:.3f}')
+        self.meas[pin] = fres
+        self.outcomes[pin] = fres <= 0.07
         return res
         
 

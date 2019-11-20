@@ -95,8 +95,9 @@ class VoltageThresholdTest:
             self.smu.write(f'sour:volt:lev {res}')
             out_val = float(self.dmm.query('?'))
 
-        self.outcomes[pin] = (res <= self.vih) if mode.upper() == 'HIGH' else (res >= self.vil)
-        self.meas[pin] = res
+        fres = float(f'{res:.3f}')
+        self.outcomes[pin] = (fres <= self.vih) if mode.upper() == 'HIGH' else (fres >= self.vil)
+        self.meas[pin] = fres
 
         if mode.upper() == 'HIGH':
             self.hi.meas = self.meas
@@ -110,7 +111,7 @@ class VoltageThresholdTest:
             return self
 
         self.smu.write('*rst;outp off;*cls')
-        return res
+        return fres
 
 class VoltageThresholdTestHigh:
     get_valid_pins = VoltageThresholdTest.get_valid_pins
