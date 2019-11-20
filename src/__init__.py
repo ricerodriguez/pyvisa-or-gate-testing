@@ -1,2 +1,5 @@
 from .contact_test import ContactTest
-from .power_consumption import PowerConsumptionTest
+from .power_consumption_test import PowerConsumptionTest
+from .output_short_current_test import OutputShortCurrentTest
+from .output_drive_current_test import OutputDriveCurrentTest
+from .voltage_threshold_test import VoltageThresholdHigh, VoltageThresholdLow

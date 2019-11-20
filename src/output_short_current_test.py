@@ -22,45 +22,50 @@ Author's note:
     then we're going to physically ground all the output pins.
     for the circuitry we're grouding and measuring the outputs
 
-
-
-
+Adapted from code by Victoria Rodriguez
         I wonder what we should do about the PSU
 '''
 
 __author__ = "Isaac Morales"
+__credits__ = "Victoria Rodriguez"
 __email__ = "isaac.morales@ttu.edu"
 __status__ = "Prototype"
 
 import pyvisa
 import logging
 import argparse
-from resource import SMUSetup
+from resources import SMUSetup
 
-class OutputShortTest:
-    def __init__(self,vcc,pins = 0):
-        self.rm = pyvisa.ResourceManager()
-        self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the input pin.'
-        self.instr = SMUSetup('volt',vcc,'curr')
-        self.smu = self.instr.smu
-        self.meas = {}
-        # self.currPin = pins[0]
-
+class OutputShortCurrentTest:
     def get_valid_pins(pin_vals):
-        return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin != 'VCC' and pin != 'GND' and pin != 'IN']
+        return [f'pin {i+1}' for i,pin in enumerate(pin_vals) if pin == 'OUT']
+
+    def __init__(self,rm,pin_vals):
+        self.rm = rm
+        self.msg = 'Please disconnect all output pins from the DUT and connect the SMU to the input pin.'
+        self.instr = SMUSetup(src='volt',lev=0,sens='curr',rm=rm)
+        self.smu = self.instr.smu
+        self.meas = dict.fromkeys(OutputShortCurrentTest.get_valid_pins(pin_vals))
+        self.outcomes = dict.fromkeys(OutputShortCurrentTest.get_valid_pins(pin_vals))
 
         #basically the same as the power consumption test
-    def execute_test(self,vcc, pin = 0):
+    def execute_test(self,pin,last=False):
         # if not vcc is None:
         #     self.instr.setup('volt',vcc,'curr')
         #turn the output on
-        logging.warning('writing {} to SMU'.format(vcc))
+        logging.debug(f'Outputting 0V from SMU')
         self.smu.write('outp on')
-        self.smu.write('form:elem:curr')
-        self.meas['pin {}'.format(pin)]  = self.smu.query('read?')
-        self.smu.write('*rst;outp off;*cls;')
-        logging.warning('read: {}'.format(self.res))
-        self.rm.close()
+        self.smu.write('form:elem curr')
+        res = self.smu.query('read?')
+        if last:
+            self.smu.write('*rst;outp off;*cls')
+            # self.rm.close()
+
+        # logging.warning('read: {}'.format(self.res))
+        logging.info(f'Output Short Current Test for {pin.capitalize()}: {res}')
+        fres = float(f'{float(res):.3f}')
+        self.meas[pin] = fres
+        self.outcomes[pin] = fres >= 0.04
 
 
 if __name__ == '__main__':

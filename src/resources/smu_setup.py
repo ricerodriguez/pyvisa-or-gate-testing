@@ -19,10 +19,8 @@ import pyvisa
 import logging
 
 class SMUSetup:
-    def __init__(self,src,lev,sens):
-        self.rm = pyvisa.ResourceManager()
-        self.smu = None
-        self.res = None
+    def __init__(self,src,lev,sens,rm=pyvisa.ResourceManager()):
+        self.rm = rm
         self.__verify()
         self.setup(src,lev,sens)
 
@@ -39,10 +37,12 @@ class SMUSetup:
 
         except AttributeError as err:
             logging.error(err)
+            logging.error('Please connect to the SMU.')
             exit(-1)
 
         except pyvisa.errors.VisaIOError as err:
             logging.error(err)
+            logging.error('Please connect to the SMU.')
             exit(-1)
 
     # mode = source mode, lev = how much to source, sens = sens mode
@@ -58,6 +58,9 @@ class SMUSetup:
             self.smu.write(f'sens:func "{sens}"')
             # Only get the value we want
             self.smu.write(f'form:elem {sens}')
+            # Set compliance
+            self.smu.write(f'sens:curr:prot .5')
 
         except pyvisa.errors.VisaIOError as err:
+            logging.error('Please connect to the SMU.')
             logging.error(err)
