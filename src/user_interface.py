@@ -27,6 +27,8 @@ from output_drive_current_test import OutputDriveCurrentTest, OutputDriveCurrent
 from voltage_threshold_test import VoltageThresholdTest, VoltageThresholdTestLow, VoltageThresholdTestHigh
 # from resources import RelayBoard
 LIST_TESTS = ['Contact Test','Power Consumption Test','Voltage Threshold Test','Output Short Current Test','Output Drive Current Test','Functional Test']
+
+win = None
 class TotalDataset:
     def __init__(self,tests):
         self.rm=pyvisa.ResourceManager()
@@ -88,28 +90,40 @@ class ICDataset:
         self.refs['contact test'] = con
 
         # Get list of input pins
-        input_pins = [i+1 for i,pin in enumerate(self.pins) if pin == 'IN']
+        input_pins = [str(i+1) for i,pin in enumerate(self.pins) if pin == 'IN']
         # Tell user which pins to set to GND
         try:
             input_pins[-1] = f'and {input_pins[-1]}'
             msg = f'Please set pins {", ".join(input_pins)} to GND.'
+            # win['msg'].update(value=msg)
             gui.Popup(msg,title='Contact Test')
         except TypeError:
             msg = f'Please set pin {input_pins} to GND.'
             gui.Popup(msg,title='Contact Test')
+            # win['msg'].update(value=msg)
 
         # Go through list of pins
         for i,pin in enumerate(valid_pins):
             # self.relay_board.set_relay(pin)
             msg = f'Please move the SMU probe to {pin}.'
             gui.Popup(msg,title='Contact Test')
-            con.execute_test(pin,i==len(valid_pins)-1)
+            # win['msg'].update(value=msg)
+            # while True:
+            #     event,val = win.Read(timeout=10)
+            #     if event == 'Back':
+            #         msg = f'Please move the SMU probe to {valid_pins[i-1]}.'
+            #         win['msg'].update(value=msg)
+            #         con.execute_test(valid_pins[i-1],i-1==len(valid_pins)-1)
+            #         break
+            #     elif event == 'Next':
+            #         con.execute_test(pin,i==len(valid_pins)-1)
+            #         break
 
     def power_consumption_test(self):
         logging.debug('Beginning the Power Consumption Test')
 
         # Get list of output pins
-        output_pins = (str(i+1) for i,pin in enumerate(self.pins) if pin == 'OUT')
+        output_pins = [str(i+1) for i,pin in enumerate(self.pins) if pin == 'OUT']
         try:
             output_pins[-1] = f'and {output_pins[-1]}'
             msg = f'Please float output pins {", ".join(output_pins)}.'
@@ -178,7 +192,12 @@ def start_tests(fname,pin_vals,tests,voltages):
     layout = [[gui.T(text=f'{tests[0].title()}',
                       key='title',
                       font=('Helvetica',20))],
+              [gui.T(text='Loading test instructions...',
+                     key='msg')],
+              [gui.Button('Back'), gui.Button('Next')],
                hist_layout]
+
+    global win
     win = gui.Window('Test',layout)
 
     event,val=win.read(timeout=10)

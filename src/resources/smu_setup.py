@@ -58,6 +58,8 @@ class SMUSetup:
             self.smu.write(f'sens:func "{sens}"')
             # Only get the value we want
             self.smu.write(f'form:elem {sens}')
+            # Set compliance
+            self.smu.write(f'sens:curr:prot .5')
 
         except pyvisa.errors.VisaIOError as err:
             logging.error('Please connect to the SMU.')

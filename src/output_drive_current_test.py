@@ -36,8 +36,9 @@ class OutputDriveCurrentTest:
         self.instr = SMUSetup(src='volt',lev='0.40',sens='curr',rm=self.rm)
         self.smu = self.instr.smu
         self.meas = dict.fromkeys(OutputDriveCurrentTest.get_valid_pins(pin_vals))
-        self.hi = OutputDriveCurrentTestHigh(self.meas)
-        self.lo = OutputDriveCurrentTestLow(self.meas)
+        self.outcomes = dict.fromkeys(OutputDriveCurrentTest.get_valid_pins(pin_vals))
+        self.hi = OutputDriveCurrentTestHigh(self.meas,self.outcomes)
+        self.lo = OutputDriveCurrentTestLow(self.meas,self.outcomes)
 
     def execute_test(self,pin,mode,last=False):
         if mode.upper() == 'HIGH':
