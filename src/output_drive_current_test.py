@@ -49,7 +49,7 @@ class OutputDriveCurrentTest:
         res = self.smu.query('read?')
         fres = float(f'{float(res):.3f}')
         self.meas[pin] = fres
-        self.outcomes = (fres >= 0.0021) if mode.upper() == 'HIGH' else (fres >= -0.001)
+        self.outcomes[pin] = (fres >= 0.0021) if mode.upper() == 'HIGH' else (fres >= -0.001)
         if last:
             self.smu.write('*rst;outp off;*cls')
             # self.rm.close()
