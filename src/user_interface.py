@@ -25,6 +25,7 @@ from power_consumption_test import PowerConsumptionTest
 from output_short_current_test import OutputShortCurrentTest
 from output_drive_current_test import OutputDriveCurrentTest, OutputDriveCurrentTestLow, OutputDriveCurrentTestHigh
 from voltage_threshold_test import VoltageThresholdTest, VoltageThresholdTestLow, VoltageThresholdTestHigh
+from chip_stats import histogram
 # from resources import RelayBoard
 LIST_TESTS = ['Contact Test','Power Consumption Test','Voltage Threshold Test','Output Short Current Test','Output Drive Current Test','Functional Test']
 
@@ -175,7 +176,7 @@ class ICDataset:
             self.refs['voltage threshold test high'] = vt.execute_test(pin,'HIGH',i==len(input_pins)-1)
         
 
-def start_tests(fname,pin_vals,tests,voltages):
+def start_tests(fname,hname,pin_vals,tests,voltages):
     if 'voltage threshold test' in tests:
        tests[tests.index('voltage threshold test')] = 'voltage threshold test low'
        tests.append('voltage threshold test high')
@@ -186,7 +187,7 @@ def start_tests(fname,pin_vals,tests,voltages):
 
     tab_layout = [[gui.Image('resources/placeholder.png')]]
     hist_layout = [gui.TabGroup([[gui.Tab(title=test.title(),
-                                          layout=[[gui.Image('resources/placeholder.png')]],
+                                          layout=[[gui.Image('resources/placeholder.png',key=f'{test} image')]],
                                           key=f'tab {test}')] for test in tests])]
 
     layout = [[gui.T(text=f'{tests[0].title()}',
@@ -194,7 +195,7 @@ def start_tests(fname,pin_vals,tests,voltages):
                       font=('Helvetica',20))],
               [gui.T(text='Loading test instructions...',
                      key='msg')],
-              [gui.Button('Back'), gui.Button('Next')],
+              [gui.Button('Close')],
                hist_layout]
 
     global win
@@ -210,6 +211,8 @@ def start_tests(fname,pin_vals,tests,voltages):
     chip_count = 1
     only_one = False
     while True:
+        if event == 'Close':
+            break
         print(pin_vals)
         chip = ICDataset(chip_set.rm,chip_count,pin_vals,voltages)
         chip_set.add_chip(chip)
@@ -232,6 +235,10 @@ def start_tests(fname,pin_vals,tests,voltages):
             all_meas = {t:{c.num:c.refs[t].meas for c in chip_set.chips} for t in tests}
             with open(fname,'w+') as f:
                 for t in tests:
+                    # Update images
+                    histogram(t.title(),hname,[all_meas[t][c.num][p] for c in chip_set.chips for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals)])
+                    im = win[f'{t} image']
+                    im.update(filename=f'{hname}/{t.title()}_Histogram')
                     # f.write(f'{t.upper():~^50}\n')
                     f.write(f'{t.title()}\n')
                     for p in eval(t.title().replace(' ','')).get_valid_pins(pin_vals):
@@ -244,7 +251,6 @@ def start_tests(fname,pin_vals,tests,voltages):
                         for c in chip_set.chips:
                             f.write(
                                 f'        Chip #{c.num}: {all_meas[t][c.num][p]} ({all_outcomes[t][c.num][p]})\n')
-            break
     return
 
 if __name__ == '__main__':
@@ -378,20 +384,20 @@ if __name__ == '__main__':
         elif event == 'Start Tests':
             pin_vals = winit['left_pins'].ReturnValuesList[:rows]+winit['right_pins'].ReturnValuesList[rows-1::-1]
             tests = [test for test,v in val.items() if v is True]
+            fname = val['fname_data_input']
+            hname = val['fname_hist_input']
             if '' in pin_vals:
                 msg = 'Undefined value for pin {}'.format(1+pin_vals.index(''))
                 logging.error(msg)
                 gui.PopupError(msg)
             if not val['fname_data_input']:
                 msg = 'Please select a filename to save the data to.'
-                gui.PopupGetFile(message=msg,default_extension='.txt',save_as=True)
-                
-            # Change to elif after finished debugging
-            elif not started:
-                wcurr.close()
-                started=True
-                voltages = [val['vcc_lev'],val['vih_lev'],val['vil_lev'],val['voh_lev'],val['vol_lev']]
-                start_tests(val['fname_data_input'],pin_vals,tests,voltages)
+                fname=gui.PopupGetFile(message=msg,default_extension='.txt',save_as=True)
+
+            wcurr.close()
+            started=True
+            voltages = [val['vcc_lev'],val['vih_lev'],val['vil_lev'],val['voh_lev'],val['vol_lev']]
+            start_tests(fname,hname,pin_vals,tests,voltages)
             break
 
         elif event == 'Open':

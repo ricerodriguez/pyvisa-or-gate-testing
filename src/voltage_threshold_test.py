@@ -78,13 +78,14 @@ class VoltageThresholdTest:
             self.smu_setup.setup(src='volt',lev='0',sens='volt')
         
         # Set voltage to VCC, then increase in steps until output reads 2
+        self.smu.write('sens:curr:prot .5')
         self.smu.write('outp on')
-        self.smu.write(f'form:elem volt')
+        self.smu.write('form:elem volt')
         
         # DMM read
         out_val = float(self.dmm.query('?'))
-        sleep(0.5)
-        res = self.vcc
+        sleep(0.1)
+        res = self.vcc if mode.upper() == 'HIGH' else 0
 
         while out_val > self.vol if mode.upper() == 'HIGH' else out_val < self.voh:
             res = res - 0.1 if mode.upper() == 'HIGH' else res + 0.1
@@ -95,6 +96,7 @@ class VoltageThresholdTest:
             self.smu.write(f'sour:volt:lev {res}')
             out_val = float(self.dmm.query('?'))
 
+        res = self.smu.query('read?')
         fres = float(f'{float(res):.3f}')
         self.outcomes[pin] = (fres <= self.vih) if mode.upper() == 'HIGH' else (fres >= self.vil)
         self.meas[pin] = fres
@@ -136,5 +138,4 @@ if __name__ == '__main__':
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.WARNING)
-
 
