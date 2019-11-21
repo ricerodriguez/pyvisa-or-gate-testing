@@ -1,0 +1,130 @@
+Voltage Threshold Test Low
+    Pin 1:
+        Average: 1.3397999999999999
+        Standard Deviation: 0.05495634631232315
+        Chip #1: 1.3 (True)
+        Chip #2: 1.4 (True)
+        Chip #3: 1.299 (True)
+        Chip #4: 1.4 (True)
+        Chip #5: 1.3 (True)
+    Pin 2:
+        Average: 1.48
+        Standard Deviation: 0.08366600265340762
+        Chip #1: 1.4 (True)
+        Chip #2: 1.5 (True)
+        Chip #3: 1.5 (True)
+        Chip #4: 1.6 (True)
+        Chip #5: 1.4 (True)
+    Pin 4:
+        Average: 1.2788
+        Standard Deviation: 0.04461726123374224
+        Chip #1: 1.199 (True)
+        Chip #2: 1.298 (True)
+        Chip #3: 1.298 (True)
+        Chip #4: 1.299 (True)
+        Chip #5: 1.3 (True)
+    Pin 5:
+        Average: 1.5
+        Standard Deviation: 0.10000000000000009
+        Chip #1: 1.4 (True)
+        Chip #2: 1.5 (True)
+        Chip #3: 1.6 (True)
+        Chip #4: 1.6 (True)
+        Chip #5: 1.4 (True)
+    Pin 9:
+        Average: 2.22
+        Standard Deviation: 1.556277610196844
+        Chip #1: 1.4 (True)
+        Chip #2: 1.5 (True)
+        Chip #3: 1.6 (True)
+        Chip #4: 1.6 (True)
+        Chip #5: 5.0 (True)
+    Pin 10:
+        Average: 2.0796
+        Standard Deviation: 1.6333187992550628
+        Chip #1: 1.3 (True)
+        Chip #2: 1.399 (True)
+        Chip #3: 1.4 (True)
+        Chip #4: 1.299 (True)
+        Chip #5: 5.0 (True)
+    Pin 12:
+        Average: 1.5
+        Standard Deviation: 0.10000000000000009
+        Chip #1: 1.4 (True)
+        Chip #2: 1.6 (True)
+        Chip #3: 1.5 (True)
+        Chip #4: 1.6 (True)
+        Chip #5: 1.4 (True)
+    Pin 13:
+        Average: 1.3796
+        Standard Deviation: 0.044506179346243534
+        Chip #1: 1.3 (True)
+        Chip #2: 1.4 (True)
+        Chip #3: 1.398 (True)
+        Chip #4: 1.4 (True)
+        Chip #5: 1.4 (True)
+Voltage Threshold Test High
+    Pin 1:
+        Average: 0.86
+        Standard Deviation: 0.0547722557505166
+        Chip #1: 0.8 (True)
+        Chip #2: 0.9 (True)
+        Chip #3: 0.9 (True)
+        Chip #4: 0.9 (True)
+        Chip #5: 0.8 (True)
+    Pin 2:
+        Average: 0.96
+        Standard Deviation: 0.0547722557505166
+        Chip #1: 0.9 (True)
+        Chip #2: 1.0 (True)
+        Chip #3: 1.0 (True)
+        Chip #4: 1.0 (True)
+        Chip #5: 0.9 (True)
+    Pin 4:
+        Average: 0.88
+        Standard Deviation: 0.04472135954999579
+        Chip #1: 0.9 (True)
+        Chip #2: 0.9 (True)
+        Chip #3: 0.9 (True)
+        Chip #4: 0.9 (True)
+        Chip #5: 0.8 (True)
+    Pin 5:
+        Average: 0.96
+        Standard Deviation: 0.0547722557505166
+        Chip #1: 0.9 (True)
+        Chip #2: 1.0 (True)
+        Chip #3: 1.0 (True)
+        Chip #4: 1.0 (True)
+        Chip #5: 0.9 (True)
+    Pin 9:
+        Average: 1.78
+        Standard Deviation: 1.8005554698481243
+        Chip #1: 0.9 (True)
+        Chip #2: 1.0 (True)
+        Chip #3: 1.0 (True)
+        Chip #4: 1.0 (True)
+        Chip #5: 5.0 (False)
+    Pin 10:
+        Average: 1.72
+        Standard Deviation: 1.8335757415498275
+        Chip #1: 0.9 (True)
+        Chip #2: 0.9 (True)
+        Chip #3: 0.9 (True)
+        Chip #4: 0.9 (True)
+        Chip #5: 5.0 (False)
+    Pin 12:
+        Average: 0.9400000000000001
+        Standard Deviation: 0.0547722557505166
+        Chip #1: 0.9 (True)
+        Chip #2: 1.0 (True)
+        Chip #3: 0.9 (True)
+        Chip #4: 1.0 (True)
+        Chip #5: 0.9 (True)
+    Pin 13:
+        Average: 0.88
+        Standard Deviation: 0.04472135954999579
+        Chip #1: 0.9 (True)
+        Chip #2: 0.9 (True)
+        Chip #3: 0.9 (True)
+        Chip #4: 0.9 (True)
+        Chip #5: 0.8 (True)

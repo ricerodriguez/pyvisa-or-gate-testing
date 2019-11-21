@@ -1,0 +1,19 @@
+Power Consumption Test
+    Pin 14:
+        Average: 0.00011
+        Standard Deviation: 0.0
+        Chip #1: 0.00011 (True)
+        Chip #2: 0.00011 (True)
+        Chip #3: 0.00011 (True)
+        Chip #4: 0.00011 (True)
+        Chip #5: 0.00011 (True)
+        Chip #6: 0.00011 (True)
+        Chip #7: 0.00011 (True)
+        Chip #8: 0.00011 (True)
+        Chip #9: 0.00011 (True)
+        Chip #10: 0.00011 (True)
+        Chip #11: 0.00011 (True)
+        Chip #12: 0.00011 (True)
+        Chip #13: 0.00011 (True)
+        Chip #14: 0.00011 (True)
+        Chip #15: 0.00011 (True)

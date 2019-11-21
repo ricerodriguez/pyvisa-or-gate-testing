@@ -1,0 +1,73 @@
+Output Short Current Test
+    Pin 3:
+        Average: 0.042666666666666665
+        Standard Deviation: 0.006102302453836195
+        Chip #1: 0.046 (True)
+        Chip #2: 0.046 (True)
+        Chip #3: 0.05 (True)
+        Chip #4: 0.031 (False)
+        Chip #5: 0.05 (True)
+        Chip #6: 0.035 (False)
+        Chip #7: 0.045 (True)
+        Chip #8: 0.034 (False)
+        Chip #9: 0.037 (False)
+        Chip #10: 0.04 (True)
+        Chip #11: 0.04 (True)
+        Chip #12: 0.047 (True)
+        Chip #13: 0.045 (True)
+        Chip #14: 0.045 (True)
+        Chip #15: 0.049 (True)
+    Pin 6:
+        Average: 0.0422
+        Standard Deviation: 0.0055446241660600535
+        Chip #1: 0.046 (True)
+        Chip #2: 0.045 (True)
+        Chip #3: 0.047 (True)
+        Chip #4: 0.028 (False)
+        Chip #5: 0.047 (True)
+        Chip #6: 0.038 (False)
+        Chip #7: 0.036 (False)
+        Chip #8: 0.036 (False)
+        Chip #9: 0.041 (True)
+        Chip #10: 0.044 (True)
+        Chip #11: 0.042 (True)
+        Chip #12: 0.047 (True)
+        Chip #13: 0.043 (True)
+        Chip #14: 0.046 (True)
+        Chip #15: 0.047 (True)
+    Pin 8:
+        Average: 0.042333333333333334
+        Standard Deviation: 0.004253849796976627
+        Chip #1: 0.042 (True)
+        Chip #2: 0.044 (True)
+        Chip #3: 0.045 (True)
+        Chip #4: 0.029 (False)
+        Chip #5: 0.045 (True)
+        Chip #6: 0.039 (False)
+        Chip #7: 0.041 (True)
+        Chip #8: 0.042 (True)
+        Chip #9: 0.041 (True)
+        Chip #10: 0.042 (True)
+        Chip #11: 0.044 (True)
+        Chip #12: 0.044 (True)
+        Chip #13: 0.046 (True)
+        Chip #14: 0.044 (True)
+        Chip #15: 0.047 (True)
+    Pin 11:
+        Average: 0.0438
+        Standard Deviation: 0.003468223093829379
+        Chip #1: 0.042 (True)
+        Chip #2: 0.047 (True)
+        Chip #3: 0.048 (True)
+        Chip #4: 0.047 (True)
+        Chip #5: 0.048 (True)
+        Chip #6: 0.041 (True)
+        Chip #7: 0.04 (True)
+        Chip #8: 0.039 (False)
+        Chip #9: 0.037 (False)
+        Chip #10: 0.043 (True)
+        Chip #11: 0.044 (True)
+        Chip #12: 0.043 (True)
+        Chip #13: 0.045 (True)
+        Chip #14: 0.047 (True)
+        Chip #15: 0.046 (True)

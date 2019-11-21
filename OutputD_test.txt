@@ -1,0 +1,74 @@
+Output Drive Current Test Low
+    Pin 3:
+        Average: -0.042
+        Standard Deviation: 0.0014142135623730933
+        Chip #1: -0.043 (False)
+        Chip #2: -0.041 (False)
+        Chip #3: -0.044 (False)
+        Chip #4: -0.04 (False)
+        Chip #5: -0.042 (False)
+        Chip #6: -0.042 (False)
+    Pin 6:
+        Average: -0.04066666666666667
+        Standard Deviation: 0.0013662601021279476
+        Chip #1: -0.041 (False)
+        Chip #2: -0.042 (False)
+        Chip #3: -0.041 (False)
+        Chip #4: -0.039 (False)
+        Chip #5: -0.042 (False)
+        Chip #6: -0.039 (False)
+    Pin 8:
+        Average: -0.04033333333333333
+        Standard Deviation: 0.0012110601416389978
+        Chip #1: -0.041 (False)
+        Chip #2: -0.04 (False)
+        Chip #3: -0.042 (False)
+        Chip #4: -0.039 (False)
+        Chip #5: -0.041 (False)
+        Chip #6: -0.039 (False)
+    Pin 11:
+        Average: -0.04116666666666667
+        Standard Deviation: 0.001329160135825127
+        Chip #1: -0.042 (False)
+        Chip #2: -0.042 (False)
+        Chip #3: -0.042 (False)
+        Chip #4: -0.04 (False)
+        Chip #5: -0.042 (False)
+        Chip #6: -0.039 (False)
+Output Drive Current Test High
+    Pin 3:
+        Average: -0.042
+        Standard Deviation: 0.0014142135623730933
+        Chip #1: -0.043 (False)
+        Chip #2: -0.041 (False)
+        Chip #3: -0.044 (False)
+        Chip #4: -0.04 (False)
+        Chip #5: -0.042 (False)
+        Chip #6: -0.042 (False)
+    Pin 6:
+        Average: -0.04066666666666667
+        Standard Deviation: 0.0013662601021279476
+        Chip #1: -0.041 (False)
+        Chip #2: -0.042 (False)
+        Chip #3: -0.041 (False)
+        Chip #4: -0.039 (False)
+        Chip #5: -0.042 (False)
+        Chip #6: -0.039 (False)
+    Pin 8:
+        Average: -0.04033333333333333
+        Standard Deviation: 0.0012110601416389978
+        Chip #1: -0.041 (False)
+        Chip #2: -0.04 (False)
+        Chip #3: -0.042 (False)
+        Chip #4: -0.039 (False)
+        Chip #5: -0.041 (False)
+        Chip #6: -0.039 (False)
+    Pin 11:
+        Average: -0.04116666666666667
+        Standard Deviation: 0.001329160135825127
+        Chip #1: -0.042 (False)
+        Chip #2: -0.042 (False)
+        Chip #3: -0.042 (False)
+        Chip #4: -0.04 (False)
+        Chip #5: -0.042 (False)
+        Chip #6: -0.039 (False)
